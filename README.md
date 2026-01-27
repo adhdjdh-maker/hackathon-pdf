@@ -62,21 +62,12 @@ QazZerep PRO — интеллектуальная система для преп
      pip install -r requirements.txt
      python -m spacy download xx_sent_ud_sm
      ```
-   - Frontend:
-     ```bash
-     cd frontend
-     npm install
-     ```
-3. **Запустите backend:**
+3. **Запустите сайт:**
    ```bash
    python3 main.py
    ```
-4. **Запустите frontend:**
-   ```bash
-   npm run dev
-   ```
 5. **Откройте в браузере:**
-   [http://localhost:5173](http://localhost:5173)
+   [http://localhost:8080](http://localhost:8080)
 
 ---
 
