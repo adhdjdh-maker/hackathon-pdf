@@ -1,6 +1,7 @@
 
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers import auth
 from app.routers.handlers import text
@@ -13,6 +14,9 @@ app.add_middleware(
 	allow_methods=["*"],
 	allow_headers=["*"]
 )
+
+app.mount("/", StaticFiles(directory="app/public", html=True), name="static")
+
 app.include_router(auth.router, prefix="/auth")
 app.include_router(text.router, prefix="/documents")
 if __name__ == "__main__":
