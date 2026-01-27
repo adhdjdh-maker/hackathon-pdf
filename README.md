@@ -44,7 +44,7 @@ QazZerep PRO — интеллектуальная система для преп
 
 - **Frontend:** React, Vite, Tailwind CSS
 - **Backend:** FastAPI, Python, PyMuPDF (fitz)
-- **Database:** (ваш выбор, например, PostgreSQL)
+- **Database:** mongoDB
 - **API:** REST/gRPC
 
 ---
@@ -67,7 +67,7 @@ QazZerep PRO — интеллектуальная система для преп
    python3 main.py
    ```
 5. **Откройте в браузере:**
-   [http://localhost:8080](http://localhost:8080)
+   [http://localhost:8080](http://localhost:8000)
 
 ---
 
