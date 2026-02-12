@@ -1,238 +1,173 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { 
   FiArrowLeft, FiCpu, FiDatabase, FiLock, FiShield, FiFileText,
-  FiActivity, FiTerminal, FiLayers, FiAlertCircle, FiGlobe, FiInfo
+  FiActivity, FiTerminal, FiAlertCircle, FiGlobe, FiInfo, FiZap, FiChevronRight
 } from 'react-icons/fi';
 
 const InfoPage = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
-const content = {
-  'документация': {
-    title: 'Kernel Specs',
-    subtitle: 'Низкоуровневая архитектура системы анализа QazZerep Core v2.4',
-    icon: <FiTerminal className="text-emerald-500" />,
-    items: [
-      { 
-        t: 'PyMuPDF (fitz) Stream Engine', 
-        d: 'Ядро использует высокопроизводительную библиотеку fitz для прямого доступа к бинарным структурам PDF. Текст извлекается в виде потока байтов, минуя сохранение на диск, что исключает утечку данных и повышает скорость обработки до 500 стр/сек.' 
-      },
-      { 
-        t: 'Динамический K-Shingling', 
-        d: 'Алгоритм разбивает текст на пересекающиеся последовательности (шинглы). Параметр k=3..9 позволяет системе находить не только прямое копирование, но и "умный рерайт" с сохранением структуры предложения.' 
-      },
-      { 
-        t: 'MD5 Fingerprinting', 
-        d: 'Для каждого сегмента текста генерируется 128-битный отпечаток с использованием hashlib.md5. Это позволяет сравнивать документы не посимвольно, а через сопоставление их цифровых сигнатур в оперативной памяти.' 
-      },
-      { 
-        t: 'Индекс Сходства Жаккара', 
-        d: 'Математическая модель базируется на расчете пересечения множеств хешей. Коэффициент Жаккара (Jaccard Similarity) обеспечивает эталонную точность вычисления процента уникальности, признанную в мировой науке.' 
-      },
-      
-      { 
-        t: 'Batch Cross-Check (O(n²))', 
-        d: 'Система реализует пакетную сверку всех загруженных файлов между собой. Это создает замкнутую сеть проверок, выявляя факты передачи работ между студентами внутри одной группы или потока.' 
-      },
-      { 
-        t: 'Asynchronous FastAPI Backend', 
-        d: 'Благодаря асинхронности на базе Python asyncio, ядро не блокирует основной поток при выполнении тяжелых математических расчетов, поддерживая стабильный пинг даже при анализе диссертаций.' 
-      },
-      { 
-        t: 'Neural Highlight Engine', 
-        d: 'Специальный CSS-движок визуализирует результаты: .diff-match подсвечивает критический плагиат, а .diff-rewrite отмечает зоны, где автор пытался скрыть заимствование через синонимайзеры.' 
-      },
-      { 
-        t: 'RAM-Only Processing', 
-        d: 'Все вычисления происходят исключительно в волатильной памяти (RAM). После завершения сессии и генерации отчета, Python-объекты уничтожаются сборщиком мусора, не оставляя следов на физических носителях.' 
-      },
-      { 
-        t: 'Real-time Console Streaming', 
-        d: 'Dashboard транслирует логи ядра в реальном времени через React-state. Пользователь видит каждый этап: от инициализации ETL-конвейера до финализации матрицы пересечений.' 
-      },
-      { 
-        t: 'G-Force API Integration', 
-        d: 'Поддержка gRPC и REST интерфейсов для интеграции с LMS системами (Moodle, Canvas). Система может быть развернута как независимый узел в закрытой корпоративной сети предприятия.' 
-      }
-    ]
-  },
-  'база-знаний': {
-    title: 'Global Index',
-    subtitle: 'Источники данных и методология расширенного поиска заимствований',
-    icon: <FiDatabase className="text-blue-500" />,
-    items: [
-      { t: 'Локальный Архив ВУЗов', d: 'Централизованная база всех загруженных работ студентов РК, позволяющая мгновенно выявлять "горизонтальный" плагиат между работами разных лет.' },
-      { t: 'Open Access Crawling', d: 'Ежедневная индексация репозиториев arXiv.org, Google Scholar и ResearchGate для выявления заимствований из мировых научных публикаций.' },
-      { t: 'KazNet Deep Index', d: 'Собственный поисковый робот QazBot индексирует все государственные порталы, новостные ресурсы и архивы диссертаций на казахском и русском языках.' },
-      { t: 'Cross-Language Mapping', d: 'Уникальная технология перевода сегментов текста для поиска "переводного плагиата" с английского языка на казахский/русский.' },
-      { t: 'GitHub & Code Analysis', d: 'Модуль анализа программного кода, поддерживающий 50+ языков программирования для проверки работ технических специальностей на плагиат из репозиториев.' },
-      { t: 'AI Content Patterns', d: 'Статистический анализ текстов на наличие признаков генерации нейросетями (GPT-4, Claude), выявляющий аномальную предсказуемость лексики.' },
-      { t: 'Библиотечный Консорциум', d: 'Прямые шлюзы доступа к полнотекстовым базам Elsevier, Wiley и Springer, включая платные научные издания.' },
-      { t: 'Нормативно-Правовая База', d: 'Индексация актуальных законов и актов РК, позволяющая системе отличать легитимное цитирование законодательства от копирования текста.' },
-      { t: 'Ретро-Оцифровка', d: 'База данных оцифрованных советских учебников и редких изданий, которые отсутствуют в открытом интернете.' },
-      { t: 'User-Driven Index', d: 'Возможность для организаций создавать собственные закрытые индексы (Private Cloud) для проверки внутренней документации.' }
-    ]
-  },
-  'конфиденциальность': {
-    title: 'Security Protocol',
-    subtitle: 'Стандарты защиты данных и юридическая прозрачность QazZerep',
-    icon: <FiLock className="text-red-500" />,
-    items: [
-      { t: 'Суверенитет Данных РК', d: 'Все серверные мощности расположены в сертифицированных дата-центрах на территории Республики Казахстан в соответствии с законом № 94-V.' },
-      { t: 'Шифрование AES-GCM-256', d: 'Каналы передачи данных защищены военным стандартом шифрования. Ваши документы недоступны для перехвата провайдерами или третьими лицами.' },
-      { t: 'Stateless Архитектура', d: 'Система не сохраняет историю загрузок без явного требования пользователя. Каждый акт проверки является эфемерным и самоудаляемым.' },
-      { t: 'JWT-Авторизация', d: 'Доступ к Dashboard защищен токенами с ограниченным временем жизни, что предотвращает угон сессий и несанкционированный доступ к отчетам.' },
-      { t: 'Анонимизация Метаданных', d: 'При обработке PDF-файлов все персональные данные (Author, Creator, Producer) вырезаются из метаданных документа до начала анализа.' },
-      { t: 'ISO 27001 Compliance', d: 'Внутренние процессы управления данными соответствуют международным стандартам информационной безопасности.' },
-      { t: 'Immutable Audit Logs', d: 'История действий в системе записывается в неизменяемый лог на базе блокчейн-технологии, что гарантирует честность результатов.' },
-      { t: 'Право на Забвение', d: 'Пользователь может в один клик удалить все свои следы из системы, включая хешированные отпечатки ранее загруженных работ.' },
-      { t: 'Physical Node Shielding', d: 'Серверные стойки защищены системами биометрического контроля и мониторинга 24/7, исключая физический доступ к железу.' },
-      { t: 'Zero-Knowledge Proof', d: 'Мы проверяем ваши тексты, но §не владеем ими. QazZerep — это прозрачный инструмент, а не хранилище чужой интеллектуальной собственности.' }
-    ]
-  },
-  'условия-использования': {
-        title: 'Terms of Service',
-        subtitle: 'Юридический регламент взаимодействия с платформой QazZerep',
-        icon: <FiFileText className="text-amber-500" />,
-        items: [
-        { t: 'Акцепт Соглашения', d: 'Использование сервиса QazZerep означает полное и безоговорочное принятие условий данного манифеста. Платформа предоставляет инструменты для анализа, но ответственность за финальную интерпретацию результатов лежит на пользователе.' },
-        { t: 'Интеллектуальная Собственность', d: 'Все алгоритмы, исходный код ядра и элементы дизайна являются собственностью QazZerep. Пользователь сохраняет за собой все права на загружаемый контент (диссертации, статьи, отчеты).' },
-        { t: 'Добросовестное Использование', d: 'Запрещается использование автоматизированных скриптов (ботов) для обхода ограничений системы или проведения DDoS-атак на узлы обработки данных.' },
-        { t: 'Ограничение Ответственности', d: 'Система предоставляет вероятностную оценку сходства. Мы не гарантируем 100% выявление всех форм плагиата, особенно при использовании продвинутых нейронных методов обфускации текста.' },
-        { t: 'Лимиты и Квоты', d: 'Бесплатные и корпоративные аккаунты ограничены объемом загружаемых данных и количеством запросов к API в секунду для обеспечения стабильности кластера.' },
-        { t: 'Запрещенный Контент', d: 'Запрещается загрузка материалов, содержащих государственную тайну, вредоносный код или контент, нарушающий законодательство Республики Казахстан.' },
-        { t: 'Модификация Сервиса', d: 'QazZerep оставляет за собой право обновлять алгоритмы анализа (ядро v2.4.x) без предварительного уведомления для повышения точности детекции заимствований.' },
-        { t: 'Прекращение Доступа', d: 'Система вправе заблокировать доступ к Dashboard при обнаружении попыток реверс-инжиниринга или взлома API-интерфейсов.' },
-        { t: 'Территориальное Право', d: 'Все споры рассматриваются в соответствии с действующим законодательством РК по месту регистрации оператора системы.' },
-        { t: 'Публичные Оферты', d: 'Данные условия являются публичной офертой. Продолжение работы в системе после обновления условий означает их автоматическое принятие.' }
-        ]
-  },
-  'cookie': {
-    title: 'Cookie Policy',
-    subtitle: 'Механизмы хранения технических сессий и локальных данных',
-    icon: <FiActivity className="text-purple-500" />,
-    items: [
-      { t: 'Session Persistence', d: 'Мы используем технические файлы cookie для поддержания вашей сессии авторизации (JWT). Это позволяет вам не вводить пароль при каждом обновлении Dashboard.' },
-      { t: 'Security Tokens', d: 'Анти-фрод файлы cookie помогают нам идентифицировать подозрительную активность и защищать ваш аккаунт от угона сессии через межсайтовую подделку запросов (CSRF).' },
-      { t: 'User Preferences', d: 'Система запоминает ваши настройки интерфейса, такие как выбранная длина шингла (k-shingle) и предпочтения визуальной темы.' },
-      { t: 'Analytics Fragments', d: 'Анонимные данные о скорости загрузки PDF-файлов собираются для оптимизации работы наших серверов в Актау и Алматы.' },
-      { t: 'Zero Third-Party Tracking', d: 'Мы принципиально не используем маркетинговые или рекламные cookie. Ваша активность внутри QazZerep не передается рекламным сетям (Google, Meta и др.).' },
-      { t: 'LocalStorage Usage', d: 'Часть данных о прогрессе анализа может временно храниться в LocalStorage вашего браузера для быстрого восстановления после случайного закрытия вкладки.' },
-      { t: 'Strictly Necessary', d: 'Большинство используемых нами файлов являются "строго необходимыми" для работы ядра аналитики. Без них функционал Dashboard будет недоступен.' },
-      { t: 'Expiration Policy', d: 'Технические куки имеют ограниченный срок жизни и автоматически удаляются по истечении сессии или через 24 часа после последнего входа.' },
-      { t: 'Управление Файлами', d: 'Вы можете в любой момент очистить данные в настройках браузера, однако это приведет к немедленному завершению текущего сеанса анализа.' },
-      { t: 'Consent Management', d: 'Используя сервис, вы соглашаетесь с тем, что технические данные необходимы для обеспечения кибербезопасности и корректной работы математических алгоритмов.' }
-    ],
-  },
-  'помощь': {
-    title: 'Support Center',
-    subtitle: 'Центр технической поддержки и руководства пользователя',
-    icon: <FiActivity className="text-cyan-500" />,
-    items: [
-      { t: 'Инструкция по загрузке', d: 'Для корректного анализа рекомендуется использовать PDF с текстовым слоем. Если ваш файл — это скан, встроенный модуль Anti-OCR проведет предварительную очистку визуального шума.' },
-      { t: 'Интерпретация отчета', d: 'Процент уникальности выше 80% считается нормой для научных работ. Красная зона (ниже 50%) требует детальной проверки через "Neural Comparison Mode".' },
-      { t: 'Восстановление доступа', d: 'Если вы потеряли доступ к Dashboard, воспользуйтесь формой сброса пароля. Все сессии защищены JWT, поэтому при смене пароля старые сессии аннулируются.' },
-      { t: 'Технические лимиты', d: 'Максимальный размер одного файла — 50MB. При необходимости анализа более крупных массивов данных (Big Data), свяжитесь с отделом интеграции.' }
-    ]
-  },
-  'контакты': {
-    title: 'Contact Nodes',
-    subtitle: 'Прямые каналы связи с операторами системы QazZerep',
-    icon: <FiGlobe className="text-pink-500" />,
-    items: [
-        { t: 'Telegram Support', d: 'Оперативная связь через Telegram: @brjxjxjd (Ответ в течение 5 минут).' },
-        { t: 'Phone Hotline', d: 'Горячая линия для экстренных вопросов: +7 (777) 123-45-67 (24/7).' }
-    ]
-  },
-};
-  const page = content[slug] || { title: '404', subtitle: 'Not Found', icon: <FiAlertCircle />, items: [] };
+  const pageMeta = {
+    'documentation': { icon: <FiTerminal size={24} />, cat: 'architecture', key: 'doc', color: 'blue' },
+    'knowledge-base': { icon: <FiDatabase size={24} />, cat: 'methodology', key: 'base', color: 'indigo' },
+    'privacy': { icon: <FiLock size={24} />, cat: 'privacy', key: 'priv', color: 'emerald' },
+    'terms': { icon: <FiFileText size={24} />, cat: 'legal', key: 'terms', color: 'zinc' },
+    'cookie': { icon: <FiActivity size={24} />, cat: 'technical', key: 'cookie', color: 'amber' },
+    'help': { icon: <FiInfo size={24} />, cat: 'manual', key: 'help', color: 'sky' },
+    'contacts': { icon: <FiGlobe size={24} />, cat: 'channels', key: 'contacts', color: 'violet' }
+  };
 
+  const meta = pageMeta[slug] || { icon: <FiAlertCircle size={24}/>, cat: 'error', key: '404', color: 'red' };
+  const items = t(`info.content.${meta.key}.items`, { returnObjects: true }) || [];
 
   return (
-    <div className="min-h-screen bg-[#050505] text-slate-300 font-sans selection:bg-emerald-500/30 overflow-x-hidden">
+    <div className="min-h-screen bg-background text-foreground font-sans selection:bg-white selection:text-black overflow-x-hidden">
       
-      {/* Динамический фон */}
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-[-20%] left-[-10%] w-[70vw] h-[70vw] bg-emerald-500/[0.03] blur-[120px] rounded-full animate-pulse" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] bg-blue-600/[0.02] blur-[100px] rounded-full" />
+      {/* BACKGROUND DECOR (AMBIENT LIGHT) */}
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full h-full -z-10 pointer-events-none overflow-hidden">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500/10 blur-[120px] rounded-full animate-pulse" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[30%] h-[30%] bg-indigo-500/10 blur-[100px] rounded-full" />
       </div>
 
-      <div className="max-w-6xl mx-auto px-6 py-12 relative z-10">
-        
-        {/* Компактная навигация */}
-        <nav className="flex justify-between items-center mb-16">
+      {/* NAV BAR */}
+      <nav className="sticky top-0 z-[100] bg-background/50 backdrop-blur-2xl border-b border-white/5">
+        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <button 
             onClick={() => navigate(-1)}
-            className="group flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.4em] text-white/50 hover:text-emerald-400 transition-all"
+            className="group flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground transition-all"
           >
-            <FiArrowLeft className="group-hover:-translate-x-1 transition-transform" /> Back to Terminal
-          </button>
-          <div className="h-[1px] flex-1 mx-8 bg-gradient-to-r from-white/10 via-white/5 to-transparent" />
-          <div className="text-[9px] font-mono text-emerald-500/50 hidden md:block">
-            STATUS: SECURE // NODE: AKTAU_01
-          </div>
-        </nav>
-
-        {/* Элегантный заголовок */}
-        <header className="mb-20">
-          <div className="flex items-center gap-6 mb-6">
-            <div className="p-4 bg-white/5 border border-white/10 rounded-2xl text-3xl shadow-inner">
-              {page.icon}
+            <div className="p-2 rounded-full bg-white/5 group-hover:bg-white/10 transition-colors">
+                <FiArrowLeft size={14} />
             </div>
-            <div className="h-px w-12 bg-emerald-500/50" />
-            <span className="text-xs font-mono tracking-widest text-slate-500 uppercase">System Intelligence</span>
+            {t('info.back')}
+          </button>
+          
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-foreground rounded-lg flex items-center justify-center shadow-lg shadow-white/5">
+              <FiZap size={16} className="text-background" />
+            </div>
+            <span className="font-semibold text-lg tracking-tighter italic hidden sm:block">QazZerep</span>
           </div>
-          <h1 className="text-6xl md:text-8xl font-black text-white tracking-tighter uppercase mb-6 italic">
-            {page.title}
-          </h1>
-          <p className="text-lg text-slate-400 max-w-2xl leading-relaxed border-l-2 border-emerald-500/30 pl-6">
-            {page.subtitle}
-          </p>
+
+          <div className="flex items-center gap-2">
+             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+             <span className="text-[9px] font-black uppercase tracking-widest opacity-40">System Live</span>
+          </div>
+        </div>
+      </nav>
+
+      <main className="max-w-5xl mx-auto px-6 pt-16 pb-32">
+        
+        {/* HERO SECTION */}
+        <header className="mb-24 relative">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+             <span className="w-1 h-1 rounded-full bg-blue-500" />
+             <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest italic">
+               {t(`info.categories.${meta.cat}`)}
+             </span>
+          </div>
+
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+            <div className="max-w-2xl animate-in fade-in slide-in-from-left-4 duration-700">
+              <h1 className="text-5xl md:text-8xl font-medium tracking-[ -0.04em] italic uppercase leading-[0.9]">
+                {t(`info.pages.${meta.key}.title`)}
+              </h1>
+              <p className="mt-8 text-lg md:text-xl text-muted-foreground font-light leading-relaxed opacity-60">
+                {t('info.version_desc')}
+              </p>
+            </div>
+            
+            <div className="hidden lg:block animate-in zoom-in duration-1000">
+                <div className="w-32 h-32 bg-white/[0.02] border border-white/5 rounded-[40px] flex items-center justify-center relative">
+                    <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/20 to-transparent blur-2xl opacity-50" />
+                    <div className="relative text-foreground opacity-80">
+                        {meta.icon}
+                    </div>
+                </div>
+            </div>
+          </div>
         </header>
 
-        {/* Компактная сетка карточек */}
-        <main className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-24">
-          {page.items.map((item, i) => (
+        {/* CONTENT GRID */}
+        <div className="grid grid-cols-1 gap-6">
+          {Array.isArray(items) && items.map((item, i) => (
             <div 
               key={i} 
-              className="group relative p-8 bg-white/[0.02] border border-white/5 rounded-3xl hover:bg-white/[0.04] hover:border-emerald-500/30 transition-all duration-500 ease-out"
+              className="group relative p-[1px] rounded-[32px] overflow-hidden transition-all duration-500 hover:scale-[1.01]"
             >
-              {/* Номер на фоне */}
-              <div className="absolute top-6 right-8 text-white/[0.03] font-mono text-5xl font-black group-hover:text-emerald-500/[0.05] transition-colors">
-                {(i + 1).toString().padStart(2, '0')}
-              </div>
-
-              <div className="relative z-10">
-                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-3">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]" />
-                  {item.t}
-                </h3>
-                <p className="text-sm text-slate-400 leading-relaxed font-light opacity-80 group-hover:opacity-100 transition-opacity">
-                  {item.d}
-                </p>
-              </div>
+              {/* Градиентная рамка при ховере */}
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-white/10 to-indigo-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               
-              {/* Линия декора внизу */}
-              <div className="absolute bottom-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-emerald-500/0 to-transparent group-hover:via-emerald-500/20 transition-all duration-700" />
+              <div className="relative p-8 md:p-12 bg-[#0c0c0c]/80 backdrop-blur-md rounded-[31px] border border-white/5 flex flex-col md:flex-row gap-8 md:gap-20">
+                <div className="md:w-1/3">
+                  <div className="flex items-center gap-3 mb-4">
+                    <span className="text-[10px] font-mono text-blue-500 font-bold tracking-tighter">
+                      [{ (i + 1).toString().padStart(2, '0') }]
+                    </span>
+                    <div className="h-[1px] w-8 bg-blue-500/30" />
+                  </div>
+                  <h3 className="text-xl font-medium tracking-tight text-foreground uppercase italic leading-tight">
+                    {item.t}
+                  </h3>
+                </div>
+                
+                <div className="md:w-2/3 flex justify-between items-start group/text">
+                  <p className="text-[16px] text-zinc-400 leading-relaxed font-light group-hover:text-zinc-200 transition-colors duration-300">
+                    {item.d}
+                  </p>
+                  <FiChevronRight className="shrink-0 mt-1 opacity-0 -translate-x-4 group-hover:opacity-10 group-hover:translate-x-0 transition-all duration-500" size={24} />
+                </div>
+              </div>
             </div>
           ))}
-        </main>
+        </div>
 
-        {/* Футер */}
-        <footer className="pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6 text-[10px] text-slate-500 uppercase tracking-widest">
-          <div className="flex items-center gap-3">
-            <FiShield className="text-emerald-500/50" /> 
-            <span>Protocol v2.4.0 // 2026</span>
+        {/* FOOTER ACTION */}
+        <footer className="mt-32 pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8">
+          <div className="flex flex-col gap-1">
+             <span className="text-[9px] font-black uppercase tracking-[0.5em] text-muted-foreground italic">
+               {t('info.copyright')}
+             </span>
+             <span className="text-[9px] font-medium text-muted-foreground/30 uppercase tracking-widest">
+               Platform Version 2.0.4-stable
+             </span>
           </div>
-          <div className="flex gap-8 opacity-50">
-            <span className="hover:text-white transition-colors cursor-pointer">Security</span>
-            <span className="hover:text-white transition-colors cursor-pointer">Infrastructure</span>
-            <span className="hover:text-white transition-colors cursor-pointer">Compliance</span>
+          
+          <div className="flex items-center gap-8">
+            <div className="flex -space-x-2">
+                {[FiShield, FiCpu, FiLock].map((Icon, idx) => (
+                    <div key={idx} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors cursor-help">
+                        <Icon size={14} />
+                    </div>
+                ))}
+            </div>
+            <button 
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                className="w-12 h-12 rounded-full border border-white/5 flex items-center justify-center hover:bg-white/5 transition-all"
+            >
+                <FiZap size={14} className="rotate-180" />
+            </button>
           </div>
         </footer>
-      </div>
+      </main>
+
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+        
+        @keyframes slide-up {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-in {
+          animation: slide-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+      `}</style>
     </div>
   );
 };

@@ -1,55 +1,56 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import axios from '../utils/axios'; // Твой настроенный axios
 
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => localStorage.getItem('token'));
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const fetchUserProfile = useCallback(async (currentToken) => {
+    if (!currentToken) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const res = await axios.get('/auth/me');
+      setUser(res.data);
+    } catch (err) {
+      console.error("Auth_Core: Не удалось синхронизировать профиль", err);
+      logout();
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    if (token) {
-      setUser(parseJwt(token));
-    } else {
-      setUser(null);
-    }
-  }, [token]);
+    fetchUserProfile(token);
+  }, [token, fetchUserProfile]);
 
   function login(newToken) {
-    setToken(newToken);
     localStorage.setItem('token', newToken);
+    setToken(newToken);
   }
 
   function logout() {
-    setToken(null);
     localStorage.removeItem('token');
+    setToken(null);
     setUser(null);
   }
 
+  function updateUserData(newData) {
+    setUser(prev => ({ ...prev, ...newData }));
+  }
+
   return (
-    <AuthContext.Provider value={{ user, token, login, logout }}>
-      {children}
+    <AuthContext.Provider value={{ user, token, login, logout, updateUserData, loading }}>
+      {!loading && children} 
     </AuthContext.Provider>
   );
 }
 
 export function useAuth() {
   return useContext(AuthContext);
-}
-
-function parseJwt(token) {
-  try {
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split('')
-        .map(function (c) {
-          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-        })
-        .join('')
-    );
-    return JSON.parse(jsonPayload);
-  } catch {
-    return null;
-  }
 }

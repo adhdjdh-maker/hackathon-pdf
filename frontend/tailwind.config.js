@@ -1,18 +1,17 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: [
-    "./index.html",
-    "./src/**/*.{js,jsx,ts,tsx}",
-  ],
+  darkMode: 'class', // Важно: переключение через класс, а не медиа-запрос
+  content: ["./src/**/*.{js,jsx,ts,tsx}"],
   theme: {
     extend: {
       colors: {
-        dark: '#111111',
-        accent: '#00FFD0',
-        card: '#18181b',
-        border: '#232323',
-      },
+        // Определяем палитру, которая будет зависеть от переменных
+        background: 'var(--color-background)',
+        foreground: 'var(--color-foreground)',
+        card: 'var(--color-card)',
+        border: 'var(--color-border)',
+      }
     },
   },
   plugins: [],
-};
+}

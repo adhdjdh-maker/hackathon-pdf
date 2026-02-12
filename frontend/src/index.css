@@ -2,7 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  background: #111111;
-  color: #fff;
+@layer base {
+  :root {
+    --color-background: #ffffff;
+    --color-foreground: #050505;
+    --color-card: #f9f9f9;
+    --color-border: #e5e5e5;
+  }
+
+  .dark {
+    --color-background: #050505;
+    --color-foreground: #ededed;
+    --color-card: #0a0a0a;
+    --color-border: #1f1f1f;
+  }
+
+  body {
+    @apply bg-background text-foreground transition-colors duration-300 ease-in-out;
+  }
 }

@@ -1,10 +1,11 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth, AuthProvider } from './utils/auth';
 import Login from './pages/Login';
-import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import AdminPanel from './pages/Admin'; // Новый файл
 import InfoPage from './pages/InfoPage';
+import VerifyPage from "./pages/VerifyPage"; // Импортируй созданный ниже файл
+
 function PrivateRoute({ children, adminOnly = false }) {
   const { token, user } = useAuth();
   
@@ -23,9 +24,8 @@ export default function App() {
     <AuthProvider>
       <Routes>
         <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        {/* Юзерский дешборд */}
         <Route path="/:slug" element={<InfoPage />} />
+        <Route path="/verify/:reportId" element={<VerifyPage />} />
         <Route path="/" element={
           <PrivateRoute><Dashboard /></PrivateRoute>
         } />

@@ -1,83 +1,113 @@
 import React from 'react';
-import { Link } from 'react-router-dom'; // Важно для переходов без перезагрузки
-import { FiShield, FiMap, FiLock, FiInfo } from 'react-icons/fi';
+import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { FiZap, FiShield, FiCpu, FiActivity } from 'react-icons/fi';
 
 export const Footer = () => {
+  const { t } = useTranslation();
+
   const sections = [
     {
-      title: 'Навигатор',
-      icon: <FiMap className="text-emerald-500" />,
+      title: t('footer.sections.nav.title'),
       links: [
-        { name: 'Документация', path: '/документация' },
-        { name: 'API Интеграция', path: '/api-интеграция' },
-        { name: 'База знаний', path: '/база-знаний' }
+        { name: t('info.pages.doc.title'), path: '/documentation' },
+        { name: 'API Integration', path: '/' }, // Оставил статично, если нет страницы
+        { name: t('info.pages.base.title'), path: '/knowledge-base' }
       ]
     },
     {
-      title: 'Политика',
-      icon: <FiLock className="text-blue-500" />,
+      title: t('footer.sections.legal.title'),
       links: [
-        { name: 'Конфиденциальность', path: '/конфиденциальность' },
-        { name: 'Условия использования', path: '/условия-использования' },
-        { name: 'Cookie', path: '/cookie' }
+        { name: t('info.pages.priv.title'), path: '/privacy' },
+        { name: t('info.pages.terms.title'), path: '/terms' },
+        { name: t('info.pages.cookie.title'), path: '/cookie' }
       ]
     },
     {
-      title: 'Поддержка',
-      icon: <FiInfo className="text-purple-500" />,
+      title: t('footer.sections.support.title'),
       links: [
-        { name: 'Помощь', path: '/помощь' },
-        { name: 'Контакты', path: '/контакты' }
+        { name: t('info.pages.help.title'), path: '/help' },
+        { name: t('info.pages.contacts.title'), path: '/contacts' }
       ]
     }
   ];
 
   return (
-    <footer className="mt-auto bg-[#050505]/90 backdrop-blur-2xl border-t border-white/5 p-12 z-20">
-      <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
-        
-        {/* Блок бренда */}
-        <div className="col-span-1">
-          <div className="flex items-center gap-2 text-white font-black text-xl mb-6 italic tracking-tighter">
-            <FiShield className="text-emerald-500 animate-pulse" /> QAZZEREP
-          </div>
-          <p className="text-[11px] leading-relaxed text-slate-500 font-medium uppercase tracking-wider">
-            Ведущая система верификации контента. <br />
-            Безопасность и точность на базе ИИ.
-          </p>
-        </div>
-        
-        {/* Динамические колонки */}
-        {sections.map((col, i) => (
-          <div key={i} className="animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ delay: `${i * 100}ms` }}>
-            <h4 className="text-white text-[11px] font-black uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
-              {col.icon} {col.title}
-            </h4>
-            <ul className="space-y-3">
-              {col.links.map((link, j) => (
-                <li key={j}>
-                  <Link 
-                    to={link.path} 
-                    className="text-[10px] font-bold uppercase tracking-tight text-slate-400 hover:text-emerald-500 transition-all duration-300 flex items-center gap-1 group"
-                  >
-                    <span className="w-0 group-hover:w-2 h-[1px] bg-emerald-500 transition-all duration-300"></span>
-                    {link.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
+    <footer className="mt-auto bg-background border-t border-border px-6 py-16 md:px-16 relative transition-colors duration-300">
+      <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-border to-transparent opacity-50" />
 
-      {/* Нижняя плашка */}
-      <div className="max-w-6xl mx-auto mt-16 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] font-black uppercase tracking-[0.3em] text-slate-700">
-        <div className="flex items-center gap-4">
-          <span>© 2026 QazZerep Digital LTD.</span>
-          <span className="hidden md:inline text-white/5">|</span>
-          <span className="text-emerald-500/40">Казахстан, Актау</span>
+      <div className="max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 mb-16">
+          
+          {/* LOGO & DESCRIPTION */}
+          <div className="lg:col-span-4 space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 bg-foreground rounded-xl flex items-center justify-center transition-colors">
+                <FiZap size={20} className="text-background" />
+              </div>
+              <div>
+                <h2 className="text-foreground font-black text-lg tracking-tighter leading-none uppercase italic">
+                  QazZerep
+                </h2>
+                <span className="text-[9px] font-black text-muted-foreground opacity-30 uppercase tracking-[0.3em]">
+                  Core v2.4.0
+                </span>
+              </div>
+            </div>
+            
+            <p className="text-sm text-muted-foreground leading-relaxed max-w-xs font-light opacity-60 italic">
+              {t('footer.description')}
+            </p>
+
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 px-3 py-1 bg-card border border-border rounded-full shadow-sm">
+                <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
+                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Network Online</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* LINKS */}
+          <div className="lg:col-span-8 grid grid-cols-2 md:grid-cols-3 gap-8">
+            {sections.map((col, i) => (
+              <div key={i} className="space-y-5">
+                <h4 className="text-foreground text-[10px] font-black uppercase tracking-[0.3em] opacity-40 italic">
+                  {col.title}
+                </h4>
+                <ul className="space-y-3">
+                  {col.links.map((link, j) => (
+                    <li key={j}>
+                      <Link 
+                        to={link.path} 
+                        className="text-[13px] text-muted-foreground hover:text-foreground transition-all duration-300 font-light block"
+                      >
+                        {link.name}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
         </div>
-        
+
+        {/* BOTTOM PANEL */}
+        <div className="pt-8 border-t border-border/40 flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2 text-muted-foreground opacity-20 hover:opacity-100 transition-opacity cursor-help">
+              <FiShield size={14} />
+              <span className="text-[9px] font-black uppercase tracking-[0.2em]">Security Verified</span>
+            </div>
+            <div className="flex items-center gap-2 text-muted-foreground opacity-20 hover:opacity-100 transition-opacity cursor-help">
+              <FiActivity size={14} />
+              <span className="text-[9px] font-black uppercase tracking-[0.2em]">Cloud Sync</span>
+            </div>
+          </div>
+
+          <div className="text-[9px] text-muted-foreground font-black tracking-[0.2em] uppercase opacity-20 italic">
+            © 2026 QAZZEREP • {t('footer.engine_name')}
+          </div>
+        </div>
       </div>
     </footer>
   );

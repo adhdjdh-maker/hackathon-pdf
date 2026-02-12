@@ -1,357 +1,349 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { Footer } from '../components/Footer'; // Импортируем наш новый модуль
-import axios from '../utils/axios';
-import { useAuth } from '../utils/auth';
+import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
+import axios from "../utils/axios";
+import { useTheme } from "../hooks/useTheme";
 import { 
-  FiUploadCloud, FiFileText, FiX, FiShield, FiSettings, FiLogOut, 
-  FiUser, FiDownload, FiTerminal, FiChevronRight, FiGithub, 
-  FiTwitter, FiLinkedin, FiGlobe, FiInfo, FiLock, FiMap, FiActivity, FiCpu
-} from 'react-icons/fi';
+    FiUploadCloud, FiFileText, FiX, FiChevronRight, FiActivity, FiClock, 
+    FiGrid, FiUser, FiZap, FiCalendar, FiCopy, FiCheck, FiSun, FiMoon, FiMonitor, FiNavigation 
+} from "react-icons/fi";
+import { QRCodeSVG } from 'qrcode.react';
+
+// Компоненты
+import ProcessingLoader from "../components/ProcessingLoader";
+import { Footer } from "../components/Footer";
+import ProjectRoadmap from "../components/ProjectRoadmap";
+import { Profile } from "./Profile";
+import Preloader from "../components/Preloader";
+
+// --- ВСПОМОГАТЕЛЬНЫЕ КОМПОНЕНТЫ (UI) ---
+
+function SegmentedControl({ options, activeValue, onChange, type = "text", small = false }) {
+    const activeIndex = options.findIndex(o => o.value === activeValue);
+    return (
+        <div className="relative flex bg-black/5 dark:bg-white/5 backdrop-blur-md border border-black/5 dark:border-white/5 p-1 rounded-2xl w-full select-none shadow-inner">
+            <div 
+                className="absolute top-1 bottom-1 bg-white dark:bg-zinc-800 shadow-md rounded-xl transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] z-0"
+                style={{
+                    width: `calc(${100 / options.length}% - 4px)`,
+                    left: `calc(${(activeIndex * 100) / options.length}% + 2px)`
+                }}
+            />
+            {options.map((option) => (
+                <button
+                    key={option.value}
+                    onClick={() => onChange(option.value)}
+                    className={`relative z-10 flex-1 flex items-center justify-center transition-all duration-500 ${small ? 'py-1.5' : 'py-2.5'} ${activeValue === option.value ? 'text-black dark:text-white' : 'text-muted-foreground opacity-60'}`}
+                >
+                    {type === "icon" ? option.icon : (
+                        <span className={`font-black tracking-widest uppercase leading-none ${small ? 'text-[8px]' : 'text-[10px]'}`}>{option.label}</span>
+                    )}
+                </button>
+            ))}
+        </div>
+    );
+}
+
+function NavItem({ active, icon, label, onClick }) {
+    return (
+        <button onClick={onClick} className={`flex items-center gap-3 px-5 py-3 rounded-2xl transition-all ${active ? 'bg-foreground/5 text-foreground font-bold shadow-sm' : 'text-muted-foreground hover:text-foreground opacity-70 hover:opacity-100'}`}>
+            <span className={active ? 'text-foreground' : 'opacity-40'}>{icon}</span>
+            <span className="text-[13px] tracking-tight">{label}</span>
+        </button>
+    );
+}
+
+// --- ОСНОВНОЙ КОМПОНЕНТ DASHBOARD ---
 
 export default function Dashboard() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-  
-  const [files, setFiles] = useState([]);
-  const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [shingleLen, setShingleLen] = useState(3);
-  const [logs, setLogs] = useState([]);
-  const [selectedPair, setSelectedPair] = useState(null);
-  const logEndRef = useRef(null);
+    const { theme, setTheme } = useTheme();
+    const { t, i18n } = useTranslation();
+    const [files, setFiles] = useState([]);
+    const [result, setResult] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [viewMode, setViewMode] = useState("new"); // 'new', 'history', 'roadmap'
+    const [history, setHistory] = useState([]);
+    const [isProfileOpen, setIsProfileOpen] = useState(false);
+    const [copied, setCopied] = useState(false);
+    const [selectedPair, setSelectedPair] = useState(null);
+    const [isAppLoading, setIsAppLoading] = useState(true);
 
-  useEffect(() => logEndRef.current?.scrollIntoView({ behavior: 'smooth' }), [logs]);
-
-  const addLog = (msg) => {
-    const time = new Date().toLocaleTimeString();
-    setLogs(prev => [...prev.slice(-25), `[${time}] ${msg}`]);
-  };
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
-  // ФУНКЦИЯ СКАЧИВАНИЯ ПОЛНОГО ОТЧЕТА
-  const downloadReport = () => {
-    if (!selectedPair) return;
-    const { docA, docB, originality } = selectedPair;
-    const reportId = Math.random().toString(36).toUpperCase().substring(2, 10);
-    const timestamp = new Date().toLocaleString('ru-RU');
-
-    const reportData = `
-======================================================================
-           ПОЛНЫЙ ТЕХНИЧЕСКИЙ ПРОТОКОЛ QAZZEREP PRO v2.4
-======================================================================
-ID ТРАНЗАКЦИИ: #${reportId}
-ДАТА ПРОВЕРКИ: ${timestamp}
-СТАТУС ЯДРА:   SUCCESS_SYNCHRONIZED
-----------------------------------------------------------------------
-
-1. АНАЛИЗ ОБЪЕКТОВ:
-   [ФАЙЛ А]: ${docA.name}
-   [ФАЙЛ Б]: ${docB.name}
-
-2. РЕЗУЛЬТАТЫ СХОДСТВА:
-   ОБЩАЯ УНИКАЛЬНОСТЬ: ${originality}%
-   УРОВЕНЬ ЗАИМСТВОВАНИЙ: ${100 - originality}%
-   ВИЗУАЛЬНАЯ ШКАЛА: [${'#'.repeat(Math.floor(originality / 5))}${'.'.repeat(20 - Math.floor(originality / 5))}]
-
-3. ТЕКСТОВЫЕ ДАННЫЕ (ФРАГМЕНТЫ):
-----------------------------------------------------------------------
-ИСТОЧНИК А:
-${docA.html.replace(/<[^>]*>?/gm, '').substring(0, 1500)}...
-
-ИСТОЧНИК Б:
-${docB.html.replace(/<[^>]*>?/gm, '').substring(0, 1500)}...
-
-----------------------------------------------------------------------
-Сгенерировано автоматически системой QazZerep Engine.
-Данный отчет является техническим подтверждением анализа.
-======================================================================
-    `;
-
-    const blob = new Blob([reportData], { type: 'text/plain;charset=utf-8' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `QazZerep_Full_Report_${reportId}.txt`;
-    link.click();
-    addLog(`SYS: Протокол #${reportId} успешно экспортирован.`);
-  };
-
-  const handleCompare = async () => {
-    if (files.length < 2) return addLog("CRITICAL: Нужно минимум 2 файла.");
-    setLoading(true);
-    setResult(null);
-    setLogs([]);
+    useEffect(() => {
+        const timer = setTimeout(() => setIsAppLoading(false), 2500);
+        return () => clearTimeout(timer);
+    }, []);
     
-    addLog("Инициализация QazZerep Core...");
-    const formData = new FormData();
-    files.forEach(f => formData.append('files', f));
+    useEffect(() => { 
+        if (viewMode === "history") fetchHistory(); 
+    }, [viewMode]);
 
-    try {
-      setTimeout(() => addLog("ETL: Извлечение текста и очистка метаданных..."), 500);
-      setTimeout(() => addLog("ALGO: Расчет хэш-сумм и шинглов..."), 1200);
+    const fetchHistory = async () => {
+        try { 
+            const res = await axios.get('/documents/history'); 
+            setHistory(res.data); 
+        } catch (e) { console.error("Archive error"); }
+    };
 
-      const res = await axios.post(`/documents/compare-batch?k=${shingleLen}`, formData);
-      setResult(res.data);
-      setLoading(false);
-      addLog("SUCCESS: Анализ завершен. Данные готовы к просмотру.");
-    } catch (e) {
-      addLog("KERNEL PANIC: Ошибка связи с сервером.");
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="flex h-screen bg-[#020202] text-slate-400 font-sans overflow-hidden">
-      
-      {/* SIDEBAR: COMMUNITY & NAV */}
-      <aside className="w-72 border-r border-white/5 bg-[#050505] flex flex-col z-30 shadow-2xl">
-        <div className="p-8 flex items-center gap-3 text-white font-black tracking-tighter text-2xl">
-          <div className="w-10 h-10 bg-emerald-500 rounded-2xl flex items-center justify-center text-black shadow-[0_0_20px_rgba(16,185,129,0.4)] animate-pulse">
-            <FiShield size={22} />
-          </div>
-          QAZZEREP <span className="text-emerald-500 text-[10px] mt-1 tracking-[0.3em]">PRO</span>
-        </div>
-
-        <nav className="flex-1 px-4 overflow-y-auto custom-scrollbar space-y-6">
-  
-  {/* Блок: Статус текущей группы (Синхронизация) */}
-  <div className="mt-4 p-5 rounded-[2.5rem] bg-gradient-to-b from-white/[0.03] to-transparent border border-white/5">
-    <div className="flex items-center justify-between mb-4">
-      <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Local Cluster</p>
-      <div className="flex gap-1">
-        <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></span>
-        <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse delay-75"></span>
-      </div>
-    </div>
-    <div className="space-y-3">
-      <div className="flex justify-between items-center">
-        <span className="text-[11px] font-bold text-slate-400">Загружено работ:</span>
-        <span className="text-white font-mono">{files.length}</span>
-      </div>
-    </div>
-  </div>
-
-  {/* Блок: Информационная поддержка */}
-  <div className="px-2 space-y-1">
-    <p className="text-[10px] font-black text-slate-600 uppercase px-4 mb-2 tracking-[0.2em]">Information</p>
-    {[
-      { label: 'Помощь', path: 'помощь', icon: <FiInfo /> },
-      { label: 'Контакты', path: 'контакты', icon: <FiGlobe /> },
-    ].map((item, i) => (
-      <Link 
-        key={i} 
-        to={`/${item.path}`}
-        className="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-white/5 text-slate-400 hover:text-white transition-all text-sm font-semibold"
-      >
-        <span className="text-lg opacity-40">{item.icon}</span>
-        {item.label}
-      </Link>
-    ))}
-  </div>
-
-</nav>
-
-        <div className="p-6">
-          <button onClick={handleLogout} className="w-full p-4 flex items-center justify-center gap-3 text-red-500 bg-red-500/5 hover:bg-red-500/10 rounded-2xl transition-all border border-red-500/10 font-bold uppercase text-[10px] tracking-widest">
-            <FiLogOut /> Завершить сеанс
-          </button>
-        </div>
-      </aside>
-
-      {/* MAIN CONTENT */}
-      <main className="flex-1 flex flex-col relative overflow-y-auto bg-[#020202] custom-scrollbar">
-        <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-emerald-500/10 blur-[150px] pointer-events-none" />
-
-        <div className="p-12 max-w-5xl mx-auto w-full flex-1 z-10">
-          <div className="flex justify-between items-end mb-16 animate-in fade-in slide-in-from-top-4 duration-1000">
-            <div>
-              <h1 className="text-5xl font-bold text-white tracking-tighter mb-2 italic">Рабочая Среда</h1>
-              <p className="text-slate-500 font-medium tracking-wide">Система анализа ПДФ и поиска заимствований</p>
-            </div>
-            <div className="bg-[#0A0A0A] p-2 rounded-2xl border border-white/5 flex gap-2">
-              <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-emerald-500"><FiCpu /></div>
-              <div className="flex flex-col justify-center pr-4">
-                <span className="text-[8px] font-black uppercase text-slate-600">Статус узла</span>
-                <span className="text-[10px] font-bold text-white uppercase">Online / KZ-01</span>
-              </div>
-            </div>
-          </div>
-
-          {!result && !loading && (
-            <div className="border-2 border-dashed border-white/5 rounded-[3.5rem] p-20 text-center bg-[#050505]/40 backdrop-blur-md hover:border-emerald-500/40 transition-all duration-500 group">
-              <input type="file" multiple onChange={(e) => setFiles(Array.from(e.target.files))} className="hidden" id="pdf-upload" />
-              <label htmlFor="pdf-upload" className="cursor-pointer">
-                <div className="w-24 h-24 bg-white/5 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 group-hover:scale-110 group-hover:bg-emerald-500 group-hover:text-black transition-all duration-500 text-emerald-500 shadow-2xl">
-                  <FiUploadCloud size={40} />
-                </div>
-                <h3 className="text-white text-2xl font-bold">Загрузите PDF / DOCX</h3>
-                <p className="text-slate-500 mt-3">Перетащите файлы для кросс-анализа</p>
-              </label>
-              {files.length >= 2 && (
-                <button onClick={handleCompare} className="mt-12 px-12 py-5 bg-white text-black font-black rounded-2xl hover:bg-emerald-400 hover:scale-105 transition-all text-[11px] uppercase tracking-[0.2em]">
-                  Запустить Ядро Анализа
-                </button>
-              )}
-            </div>
-          )}
-
-          {(loading || logs.length > 0) && (
-            <div className="mb-12 bg-black/80 border border-white/10 rounded-[2.5rem] p-8 font-mono text-[11px] relative overflow-hidden backdrop-blur-md animate-in fade-in">
-               <div className="flex items-center gap-3 mb-6 text-slate-500 font-bold uppercase tracking-widest">
-                 <FiTerminal className="text-emerald-500" /> <span>Console_Log_Stream</span>
-               </div>
-               <div className="space-y-2 h-40 overflow-y-auto custom-scrollbar">
-                 {logs.map((log, i) => (
-                   <div key={i} className="flex gap-4 animate-in slide-in-from-left-2">
-                     <span className="text-emerald-500/30">[{i}]</span>
-                     <span className="text-slate-300">{log}</span>
-                   </div>
-                 ))}
-                 <div ref={logEndRef} />
-               </div>
-            </div>
-          )}
-
-          {result && !loading && (
-            <div className="space-y-4 animate-in slide-in-from-bottom-10 duration-700">
-              <div className="flex justify-between items-center px-4 mb-4">
-                <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Обнаруженные совпадения</span>
-                <button onClick={() => {setResult(null); setFiles([]);}} className="text-red-500 text-[10px] font-black uppercase hover:underline">Очистить всё</button>
-              </div>
-              {result.comparisons.map((item, idx) => (
-                <div 
-                  key={idx} onClick={() => setSelectedPair(item)}
-                  className="p-8 bg-gradient-to-r from-white/[0.03] to-transparent border border-white/5 rounded-[2.5rem] flex justify-between items-center hover:border-emerald-500/40 hover:from-emerald-500/[0.05] transition-all cursor-pointer group"
-                >
-                  <div className="flex items-center gap-6">
-                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${item.originality < 50 ? 'bg-red-500/10 text-red-500' : 'bg-emerald-500/10 text-emerald-500'}`}>
-                      <FiFileText size={24}/>
-                    </div>
-                    <div>
-                      <p className="text-white font-bold text-lg">{item.pair}</p>
-                      <p className="text-[10px] text-slate-600 font-black uppercase tracking-widest mt-1">Нажмите для детального протокола</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-8 text-right">
-                    <div>
-                      <p className={`text-4xl font-black tracking-tighter ${item.originality < 50 ? 'text-red-500' : 'text-emerald-500'}`}>{item.originality}%</p>
-                      <p className="text-[9px] text-slate-600 font-bold uppercase">Уникальность</p>
-                    </div>
-                    <FiChevronRight className="text-slate-800 group-hover:text-emerald-500 group-hover:translate-x-2 transition-all" size={24} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* FOOTER: NAVIGATION & POLICY */}
-        <Footer />
-      </main>
-
-      {/* MODAL: FULL ANALYSIS VIEW */}
-      {selectedPair && (
-        <div className="fixed inset-0 z-[100] bg-black/98 backdrop-blur-3xl flex flex-col p-8 animate-in zoom-in-95 duration-500">
-          <div className="flex justify-between items-center mb-10 px-6">
-            <div className="flex items-center gap-8">
-               <div className={`text-6xl font-black tracking-tighter ${selectedPair.originality < 50 ? 'text-red-500' : 'text-emerald-500'}`}>
-                 {selectedPair.originality}%
-               </div>
-               <div>
-                  <h2 className="text-3xl font-bold text-white tracking-tighter italic">Детальная сверка документов</h2>
-                  <p className="text-emerald-500 text-[10px] font-black uppercase tracking-[0.4em] mt-1 italic">Neural Comparison Mode / Active</p>
-               </div>
-            </div>
-            <div className="flex gap-4">
-              <button onClick={downloadReport} className="flex items-center gap-3 px-8 py-5 bg-white/5 rounded-2xl text-white hover:bg-white/10 text-[11px] font-black uppercase tracking-widest border border-white/10 transition-all shadow-2xl">
-                <FiDownload size={18}/> Скачать протокол
-              </button>
-              <button onClick={() => setSelectedPair(null)} className="w-16 h-16 flex items-center justify-center text-white bg-red-500/10 rounded-2xl hover:bg-red-500 transition-all border border-red-500/20 group">
-                <FiX size={28} className="group-hover:rotate-90 transition-transform" />
-              </button>
-            </div>
-          </div>
-
-          {/* STATS ROW */}
-          <div className="grid grid-cols-4 gap-4 px-6 mb-8">
-            {[
-              { label: 'Объем выборки', val: `${(selectedPair.docA.html.length / 100).toFixed(0)} знаков` },
-              { label: 'Пересечения', val: `${100 - selectedPair.originality}%`, color: 'text-red-500' },
-              { label: 'Риск плагиата', val: selectedPair.originality < 50 ? 'КРИТИЧЕСКИЙ' : 'НИЗКИЙ', color: selectedPair.originality < 50 ? 'text-red-500' : 'text-emerald-500' },
-              { label: 'Метод анализа', val: 'Шинглы (Jaccard)' }
-            ].map((s, i) => (
-              <div key={i} className="bg-white/[0.02] border border-white/5 rounded-3xl p-5 text-center shadow-inner animate-in fade-in slide-in-from-top-2 duration-700">
-                <p className="text-[9px] font-black uppercase text-slate-600 tracking-widest mb-1">{s.label}</p>
-                <p className={`text-sm font-black tracking-tight ${s.color || 'text-white'}`}>{s.val}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-8 overflow-hidden px-6 pb-6">
-             {[
-               { name: selectedPair.docA.name, color: 'emerald', tag: 'ИСТОЧНИК_A', html: selectedPair.docA.html },
-               { name: selectedPair.docB.name, color: 'red', tag: 'ИСТОЧНИК_B', html: selectedPair.docB.html }
-             ].map((doc, i) => (
-               <div key={i} className="flex flex-col bg-[#050505] border border-white/10 rounded-[3rem] overflow-hidden shadow-2xl">
-                  <div className="p-6 border-b border-white/5 bg-white/[0.02] flex justify-between items-center px-10">
-                    <span className="text-[11px] font-black text-white tracking-widest truncate max-w-[250px]">{doc.name}</span>
-                    <span className={`text-[9px] font-black bg-white/5 text-slate-500 px-3 py-1 rounded-full border border-white/10 tracking-widest`}>{doc.tag}</span>
-                  </div>
-                  <div className="flex-1 p-12 overflow-y-auto text-slate-300 leading-relaxed text-sm custom-scrollbar selection:bg-emerald-500/30" dangerouslySetInnerHTML={{ __html: doc.html }} />
-               </div>
-             ))}
-          </div>
-        </div>
-      )}
-
-      <style>{`
-      /* Основной контейнер текста */
-.text-display {
-    color: #e0e0e0; /* Светло-серый текст, чтобы не резал глаза */
-    line-height: 1.8;
-    font-size: 15px;
-    background: #1a1a1a;
-    padding: 24px;
-    border-radius: 12px;
-}
-
-/* 1. ПОЛНОЕ СОВПАДЕНИЕ (ПЛАГИАТ) */
-.diff-match {
-    color: #ff8080; /* Мягкий красный цвет текста */
-    border-bottom: 1px solid rgba(255, 128, 128, 0.4);
-    background: rgba(255, 128, 128, 0.05); /* Едва заметный фон */
-}
-
-/* 2. РЕРАЙТ (ИЗМЕНЕННОЕ СЛОВО) */
-.diff-changed {
-    color: #ffd966; /* Песочно-желтый */
-    border-bottom: 1px dashed #ffd966;
-}
-
-/* 3. НОВЫЙ ТЕКСТ (ОРИГИНАЛЬНЫЙ) */
-.diff-added {
-    color: #a7ffeb; /* Мягкий бирюзовый */
-    background: rgba(167, 255, 235, 0.05);
-}
-
-/* 4. УДАЛЕННЫЙ ТЕКСТ (ДЛЯ СРАВНЕНИЯ) */
-.diff-removed {
-    color: #666; /* Тусклый серый */
-    text-decoration: line-through;
-}
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.05); border-radius: 20px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #10b981; }
+    const handleCompare = async () => {
+        if (files.length < 2) return;
+        setLoading(true);
+        const formData = new FormData();
+        files.forEach((f) => formData.append("files", f));
         
-        /* Стили для подсветки, если бэк их присылает */
-        .diff-match { background: rgba(239, 68, 68, 0.2); border-bottom: 2px solid #ef4444; color: #fff; }
-        .diff-rewrite { background: rgba(245, 158, 11, 0.2); border-bottom: 2px dashed #f59e0b; color: #fff; }
-      `}</style>
-    </div>
-  );
+        const requestPromise = axios.post(`/documents/compare-batch`, formData);
+        const delayPromise = new Promise(resolve => setTimeout(resolve, 2200));
+
+        try {
+            const [res] = await Promise.all([requestPromise, delayPromise]);
+            setResult(res.data);
+        } catch (e) { console.error("Server error"); }
+        finally { setLoading(false); }
+    };
+
+    const copyLink = () => {
+        const url = `${window.location.origin}/verify/${selectedPair.report_id}`;
+        navigator.clipboard.writeText(url);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    if (isAppLoading) return <Preloader />;
+
+    return (
+        <div className="flex flex-col md:flex-row h-screen bg-background text-foreground font-sans overflow-hidden transition-colors duration-500">
+            
+            {loading && <ProcessingLoader t={t} />}
+
+            {/* SIDEBAR */}
+            <aside className="fixed bottom-0 left-0 w-full z-[100] md:relative md:w-64 md:h-full bg-card md:bg-background border-t md:border-t-0 md:border-r border-border flex md:flex-col">
+                <div className="hidden md:flex p-8 items-center gap-3">
+                    <div className="w-8 h-8 bg-foreground rounded-lg flex items-center justify-center shadow-lg">
+                        <FiZap size={18} className="text-background" />
+                    </div>
+                    <span className="font-semibold text-lg tracking-tight italic">QazZerep</span>
+                </div>
+                
+                <nav className="flex-1 flex md:flex-col justify-around md:justify-start p-3 gap-2">
+                    <NavItem active={viewMode === 'new'} icon={<FiGrid size={18}/>} label={t('nav.check')} onClick={() => setViewMode('new')} />
+                    <NavItem active={viewMode === 'history'} icon={<FiClock size={18}/>} label={t('nav.history')} onClick={() => setViewMode('history')} />
+                    <div className="hidden md:block my-4 border-t border-border/50 mx-4"></div>
+                    <NavItem active={viewMode === 'roadmap'} icon={<FiNavigation size={18}/>} label={t('nav.roadmap') || "Roadmap"} onClick={() => setViewMode('roadmap')} />
+                    <NavItem active={isProfileOpen} icon={<FiUser size={18}/>} label={t('nav.account')} onClick={() => setIsProfileOpen(true)} />
+                    
+                    {/* Языки и Тема */}
+                    <div className="hidden md:flex flex-col mt-auto gap-6 p-5 border-t border-border/20 bg-black/[0.02] dark:bg-white/[0.02] rounded-t-3xl">
+                        <div className="space-y-3">
+                            <span className="text-[8px] font-black uppercase tracking-[0.3em] text-muted-foreground/50 px-1 italic">{t('settings.language')}</span>
+                            <SegmentedControl small activeValue={i18n.language} onChange={(val) => i18n.changeLanguage(val)}
+                                options={[{ value: 'rus', label: 'RU' }, { value: 'kaz', label: 'KZ' }, { value: 'eng', label: 'EN' }]} />
+                        </div>
+                        <div className="space-y-3">
+                            <span className="text-[8px] font-black uppercase tracking-[0.3em] text-muted-foreground/50 px-1 italic">{t('settings.theme')}</span>
+                            <SegmentedControl small activeValue={theme} onChange={(val) => setTheme(val)} type="icon"
+                                options={[{ value: 'light', icon: <FiSun size={12}/> }, { value: 'dark', icon: <FiMoon size={12}/> }, { value: 'system', icon: <FiMonitor size={12}/> }]} />
+                        </div>
+                    </div>
+                </nav>
+            </aside>
+
+            {isProfileOpen && <Profile onClose={() => setIsProfileOpen(false)} />}
+
+            {/* MAIN CONTENT AREA */}
+            <main className="flex-1 flex flex-col relative overflow-y-auto custom-scrollbar">
+                <div className="p-6 md:p-16 max-w-6xl mx-auto w-full flex-1">
+                    
+                    {/* Условный рендеринг заголовков (не показываем для Roadmap) */}
+                    {viewMode !== "roadmap" && (
+                        <header className="mb-12 animate-in fade-in duration-500">
+                            <h1 className="text-3xl font-medium tracking-tight italic">
+                                {viewMode === "new" ? t('dash.title_new') : t('dash.title_history')}
+                            </h1>
+                            <p className="text-muted-foreground text-sm mt-2 font-light opacity-60">
+                                {viewMode === "new" ? t('dash.subtitle_new') : t('dash.subtitle_history')}
+                            </p>
+                        </header>
+                    )}
+
+                    {/* РЕНДЕРИНГ КОНТЕНТА ПО РЕЖИМАМ */}
+                    
+                    {viewMode === "new" && (
+                        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                            {!result && !loading && (
+                                <div className="relative group">
+                                    <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl blur opacity-10 group-hover:opacity-20 transition duration-1000"></div>
+                                    <div className="relative bg-card border border-border rounded-3xl p-12 md:p-24 flex flex-col items-center border-dashed group-hover:border-foreground/20 transition-all">
+                                        <input type="file" multiple onChange={(e) => setFiles(Array.from(e.target.files))} className="hidden" id="file-up" />
+                                        <label htmlFor="file-up" className="cursor-pointer flex flex-col items-center text-center">
+                                            <div className="w-16 h-16 bg-foreground/5 rounded-2xl flex items-center justify-center mb-6">
+                                                <FiUploadCloud size={28} className="text-foreground" />
+                                            </div>
+                                            <h2 className="text-lg font-medium">{t('upload.title')}</h2>
+                                            <p className="text-muted-foreground text-sm mt-2 opacity-50">{t('upload.formats')}</p>
+                                        </label>
+                                        {files.length > 0 && (
+                                            <div className="mt-8 flex flex-col items-center">
+                                                <span className="text-[10px] text-blue-500 mb-4 font-black uppercase tracking-widest">{t('upload.selected')}: {files.length}</span>
+                                                <button onClick={handleCompare} className="px-12 py-4 bg-foreground text-background font-black text-[11px] uppercase tracking-widest rounded-full hover:opacity-90 transition-all active:scale-95 shadow-xl">
+                                                    {t('upload.btn_start')}
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                            {result && !loading && (
+                                <div className="grid grid-cols-1 gap-4">
+                                    {result.comparisons.map((item, idx) => (
+                                        <ResultItem key={idx} item={item} onClick={() => setSelectedPair(item)} />
+                                    ))}
+                                    <button onClick={() => {setResult(null); setFiles([]);}} className="py-6 text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground hover:text-foreground transition-all">{t('dash.btn_reset')}</button>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {viewMode === "history" && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-500">
+                            {history.length > 0 ? history.map((session, i) => (
+                                <HistoryCard key={i} session={session} onSelect={setSelectedPair} />
+                            )) : (
+                                <div className="col-span-full py-20 text-center opacity-30 italic">No records found</div>
+                            )}
+                        </div>
+                    )}
+
+                    {viewMode === "roadmap" && (
+                        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+                            <ProjectRoadmap />
+                        </div>
+                    )}
+                </div>
+
+                <Footer />
+            </main>
+
+            {/* --- REPORT MODAL --- */}
+            {selectedPair && (
+                <div className="fixed inset-0 z-[110] bg-background flex flex-col animate-in slide-in-from-bottom duration-500">
+                    <header className="flex items-center justify-between px-8 py-6 border-b border-border bg-background/80 backdrop-blur-xl">
+                        <div className="flex items-center gap-6">
+                            <h2 className="text-2xl font-medium tracking-tighter italic text-foreground">{t('report.title')}</h2>
+                            <div className={`px-4 py-1 rounded-full text-[10px] font-black tracking-widest uppercase ${selectedPair.originality < 50 ? 'bg-red-500/10 text-red-500' : 'bg-emerald-500/10 text-emerald-500'}`}>
+                                {selectedPair.originality}% {t('report.match_label')}
+                            </div>
+                        </div>
+                        <button onClick={() => setSelectedPair(null)} className="p-3 hover:bg-foreground/5 rounded-full text-foreground transition-colors"><FiX size={24} /></button>
+                    </header>
+
+                    <div className="flex-1 overflow-y-auto p-6 md:p-12 custom-scrollbar bg-background">
+                        <div className="max-w-7xl mx-auto space-y-10">
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                <DetailCard doc={selectedPair.docA} title={t('report.source_a')} t={t} />
+                                <div className="bg-card border border-border rounded-[40px] p-8 flex flex-col items-center justify-center shadow-xl">
+                                    <div className="relative mb-8 cursor-pointer group" onClick={copyLink}>
+                                        <div className="bg-white p-4 rounded-3xl shadow-lg transition-transform group-hover:scale-105">
+                                            <QRCodeSVG value={`${window.location.origin}/verify/${selectedPair.report_id}`} size={120} level="H" fgColor="#000" />
+                                        </div>
+                                        {copied && (
+                                            <div className="absolute inset-0 bg-background/95 rounded-3xl flex flex-col items-center justify-center border border-border animate-in zoom-in duration-200">
+                                                <FiCheck size={32} className="text-emerald-500 mb-2" />
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-foreground">{t('report.copied')}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <button onClick={copyLink} className="text-[9px] font-mono text-muted-foreground hover:text-foreground flex items-center gap-3 bg-foreground/5 px-5 py-2.5 rounded-full uppercase tracking-tighter transition-all">
+                                        <FiCopy size={12}/> {selectedPair.report_id?.substring(0, 16)}...
+                                    </button>
+                                </div>
+                                <DetailCard doc={selectedPair.docB} title={t('report.target_b')} t={t} />
+                            </div>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                                <TextPanel doc={selectedPair.docA} />
+                                <TextPanel doc={selectedPair.docB} />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <style>{`
+                .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
+                .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); }
+                .diff-match { color: #ef4444; background: rgba(239, 68, 68, 0.08); }
+                ::selection { background: #3b82f6; color: #fff; }
+            `}</style>
+        </div>
+    );
+}
+
+// --- ВСПОМОГАТЕЛЬНЫЕ КОМПОНЕНТЫ (ВНУТРЕННИЕ) ---
+
+function ResultItem({ item, onClick }) {
+    return (
+        <div onClick={onClick} className="p-6 bg-card border border-border rounded-[32px] flex items-center justify-between hover:border-foreground/20 transition-all cursor-pointer group shadow-sm">
+            <div className="flex items-center gap-5">
+                <div className="w-12 h-12 rounded-2xl bg-foreground/5 border border-border flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <FiFileText size={20} className="text-muted-foreground" />
+                </div>
+                <div>
+                    <p className="text-[15px] font-medium tracking-tight text-foreground">{item.pair}</p>
+                    <p className="text-[10px] text-muted-foreground font-mono opacity-60 mt-1 uppercase">ID: {item.report_id?.substring(0,8)}</p>
+                </div>
+            </div>
+            <div className="flex items-center gap-8">
+                <span className={`text-xl font-bold tracking-tighter ${item.originality < 50 ? 'text-red-500' : 'text-emerald-500'}`}>{item.originality}%</span>
+                <FiChevronRight className="text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" size={20} />
+            </div>
+        </div>
+    );
+}
+
+function HistoryCard({ session, onSelect }) {
+    return (
+        <div className="bg-card border border-border rounded-[32px] p-8 hover:border-foreground/20 transition-all group">
+            <div className="flex items-center gap-3 mb-8 opacity-40 group-hover:opacity-100 transition-opacity">
+                <FiCalendar size={14} className="text-foreground"/><span className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground">{new Date(session.timestamp).toLocaleDateString()}</span>
+            </div>
+            <div className="space-y-4">
+                {session.comparisons.map((comp, j) => (
+                    <div key={j} onClick={() => onSelect(comp)} className="flex justify-between items-center cursor-pointer border-b border-border/50 pb-3 last:border-0 hover:translate-x-1 transition-transform">
+                        <span className="text-[13px] text-muted-foreground hover:text-foreground transition-colors truncate pr-6">{comp.pair}</span>
+                        <span className={`text-[13px] font-black ${comp.originality < 50 ? 'text-red-500' : 'text-emerald-500'}`}>{comp.originality}%</span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function DetailCard({ doc, title, t }) {
+    const isHighRisk = doc.ai.score > 60;
+    return (
+        <div className="bg-card border border-border rounded-[40px] p-10 shadow-xl transition-all hover:scale-[1.02]">
+            <span className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.4em] opacity-40 italic">{title}</span>
+            <h3 className="text-xl font-medium mt-3 truncate text-foreground">{doc.name}</h3>
+            <div className="mt-12">
+                <div className="flex justify-between items-end mb-4">
+                    <span className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">{t('report.ai_prob')}</span>
+                    <span className={`text-2xl font-black italic ${isHighRisk ? 'text-red-500' : 'text-emerald-500'}`}>{doc.ai.score}%</span>
+                </div>
+                <div className="h-1.5 w-full bg-foreground/5 rounded-full overflow-hidden">
+                    <div className={`h-full transition-all duration-1000 ${isHighRisk ? 'bg-red-500' : 'bg-emerald-500'}`} style={{width: `${doc.ai.score}%`}} />
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function TextPanel({ doc }) {
+    return (
+        <div className="flex flex-col bg-card border border-border rounded-[40px] overflow-hidden shadow-xl">
+            <div className="px-8 py-5 border-b border-border flex justify-between items-center bg-foreground/[0.02]">
+                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest truncate max-w-[300px] italic opacity-60">{doc.name}</span>
+                <FiActivity size={14} className="text-blue-500 animate-pulse" />
+            </div>
+            <div className="p-10 text-[15px] text-foreground/80 leading-[1.8] max-h-[600px] overflow-y-auto custom-scrollbar font-light tracking-tight" dangerouslySetInnerHTML={{ __html: doc.html }} />
+        </div>
+    );
 }
