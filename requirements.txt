@@ -5,3 +5,8 @@ bson
 PyMuPDF
 spacy
 PyJWT
+sentence-transformers
+numpy
+python-docx
+motor
+zippy
