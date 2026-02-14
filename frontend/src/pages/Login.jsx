@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FiZap, FiArrowRight, FiLock, FiMail, FiShield, FiSun, FiMoon, FiUser } from 'react-icons/fi';
 import { motion } from 'framer-motion'; // Оставляем только для работы сферы
-import axios from 'axios';
+import axios from '../utils/axios';
 
 // --- ТВОЯ НЕЙРОСФЕРА (Оставлена как есть, это ядро дизайна) ---
 const NeuralBlob = ({ mousePos }) => {

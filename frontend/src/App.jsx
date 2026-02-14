@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard';
 import AdminPanel from './pages/Admin'; // Новый файл
 import InfoPage from './pages/InfoPage';
 import VerifyPage from "./pages/VerifyPage"; // Импортируй созданный ниже файл
+import TeamPage from './pages/Team';
 
 function PrivateRoute({ children, adminOnly = false }) {
   const { token, user } = useAuth();
@@ -24,6 +25,7 @@ export default function App() {
     <AuthProvider>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/team" element={<TeamPage />} />
         <Route path="/:slug" element={<InfoPage />} />
         <Route path="/verify/:reportId" element={<VerifyPage />} />
         <Route path="/" element={

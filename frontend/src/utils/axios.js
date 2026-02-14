@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const instance = axios.create({
-  baseURL: '/',
+  baseURL: 'http://168.222.254.34:8000/',
 });
 
 // Этот перехватчик будет вешать токен на каждый запрос автоматически

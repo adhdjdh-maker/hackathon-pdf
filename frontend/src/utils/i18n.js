@@ -40,20 +40,45 @@ i18n
             create_id: "Создать ID узла",
             error_invalid: "ACCESS_DENIED: НЕВЕРНЫЕ ДАННЫЕ"
             },
-          nav: { check: "Проверка", history: "История", account: "Аккаунт", roadmap: "Планы 2026" },
+          nav: { check: "Проверка", history: "История", account: "Аккаунт", roadmap: "Планы 2026", team: "Команда" },
           settings: { language: "Язык системы", theme: "Тема оформления" },
           dash: { 
             title_new: "Сверка документов", 
             subtitle_new: "Интеллектуальный анализ сходства текстов",
             title_history: "Архив проверок",
             subtitle_history: "История ваших предыдущих анализов",
-            btn_reset: "Сбросить и начать заново"
+            btn_reset: "Сбросить и начать заново",
+            clear_history: "Очистить историю",
+            clearing: "Очистка...",
+            clear_confirm: "Удалить всю историю проверок? Это действие нельзя отменить.",
+            history_label: "Сессий в архиве",
+            insights_title: "Сводка по проверкам",
+            insights_last_run: "Последняя проверка",
+            insights_total_docs: "Документов проверено",
+            insights_empty: "Пока нет ни одной проверки",
+            insights_tip_title: "Как читать проценты",
+            insights_tip_1: "80–100% — безопасная зона, текст выглядит оригинальным.",
+            insights_tip_2: "50–80% — зона внимания, пройдитесь по совпадениям вручную.",
+            insights_tip_3: "Меньше 50% — высокая зона риска, нужен детальный разбор."
           },
           upload: {
             title: "Перетащите файлы сюда",
-            formats: "Поддерживаются PDF, DOCX и TXT",
+            formats: "PDF, DOCX, TXT, ZIP и RAR",
             selected: "Выбрано",
             btn_start: "Запустить анализ"
+          },
+          team: {
+            title: "Команда ядра",
+            subtitle: "Люди, которые собирают и поддерживают QazZerep.",
+            roles: {
+              core_architect: "Фуллстек / backend",
+              product: "Идея, презентации и документация"
+            },
+            descriptions: {
+              ramir: "Ramir отвечает за backend и весь интерфейс QazZerep — от дашборда до публичных страниц.",
+              ramadan: "Ramadan — автор идеи QazZerep, собирает требования, готовит презентации и документацию проекта."
+            },
+            note: "Здесь пока заглушки — позже вы сможете подставить реальные фото и ссылки."
           },
           report: {
             title: "Отчет анализа",
@@ -62,6 +87,11 @@ i18n
             target_b: "Источник Б",
             ai_prob: "Вероятность ИИ",
             copied: "Скопировано",
+            recalc_title: "Пересчет уникальности",
+            recalc_subtitle: "Отредактируйте фрагменты текста и заново пересчитайте коэффициент без повторной загрузки файлов.",
+            recalc_btn: "Пересчитать",
+            recalc_btn_loading: "Пересчет...",
+            recalc_hint: "Изменения не сохраняются в историю — это быстрый черновой режим для подстройки формулировок.",
           },
           profile: {
             title: "Настройки узла",
@@ -208,24 +238,54 @@ i18n
   create_id: "Түйін ID-ін жасау",
   error_invalid: "ACCESS_DENIED: ҚАТЕ ДЕРЕКТЕР"
 },
-          nav: { check: "Тексеру", history: "Тарих", account: "Аккаунт", roadmap: "Даму жоспары" },
+          nav: { check: "Тексеру", history: "Тарих", account: "Аккаунт", roadmap: "Даму жоспары", team: "Топ" },
           settings: { language: "Жүйе тілі", theme: "Интерфейс тақырыбы" },
           dash: { 
             title_new: "Құжаттарды салыстыру", 
             subtitle_new: "Мәтіндердің ұқсастығын интеллектуалды талдау",
             title_history: "Тексерулер мұрағаты",
             subtitle_history: "Алдыңғы талдауларыңыздың тарихы",
-            btn_reset: "Тазалау және қайта бастау"
+            btn_reset: "Тазалау және қайта бастау",
+            clear_history: "Тарихты тазалау",
+            clearing: "Тазаланып жатыр...",
+            clear_confirm: "Барлық тексеру тарихын жоямыз ба? Бұл әрекетті болдырмауға болмайды.",
+            history_label: "Мұрағат сессиялары",
+            insights_title: "Тексеру сводкасы",
+            insights_last_run: "Соңғы тексеру",
+            insights_total_docs: "Тексерілген құжаттар",
+            insights_empty: "Әзірге бірде-бір тексеру жоқ",
+            insights_tip_title: "Проценттерді оқу",
+            insights_tip_1: "80–100% — қауіпсіз аймақ, мәтін түпнұсқаға ұқсас.",
+            insights_tip_2: "50–80% — назар аймағы, сәйкестіктерді қолмен қарап шығыңыз.",
+            insights_tip_3: "50%-дан төмен — жоғары тәуекел аймағы, деталды талдау қажет."
           },
           upload: {
             title: "Файлдарды осы жерге сүйреңіз",
-            formats: "PDF, DOCX және TXT қолданылады",
+            formats: "PDF, DOCX, TXT, ZIP және RAR",
             selected: "Таңдалды",
             btn_start: "Талдауды бастау"
+          },
+          team: {
+            title: "Ядро командасы",
+            subtitle: "QazZerep платформасын құратын және қолдайтын адамдар.",
+            roles: {
+              core_architect: "Fullstack / backend",
+              product: "Идея, презентациялар және құжаттама"
+            },
+            descriptions: {
+              ramir: "Ramir QazZerep платформасының backend бөлігі мен интерфейсін — дашбордтан бастап жалпы беттерге дейін жасайды.",
+              ramadan: "Ramadan — QazZerep идеясының авторы, талаптарды жинайды, презентациялар мен жобаның құжаттамасын дайындайды."
+            },
+            note: "Қазір мұнда плейсхолдерлер — кейін нақты фотоларды және сілтемелерді қоса аласыз."
           },
           report: {
             title: "Талдау есебі", match_label: "Ұқсастық", source_a: "А дереккөзі",
             target_b: "Б дереккөзі", ai_prob: "ИИ ықтималдығы", copied: "Көшірілді",
+            recalc_title: "Уникалдылықты қайта есептеу",
+            recalc_subtitle: "Мәтін үзінділерін түзетіп, файлдарды қайта жүктемей коэффициентті қайта есептеңіз.",
+            recalc_btn: "Қайта есептеу",
+            recalc_btn_loading: "Қайта есептелуде...",
+            recalc_hint: "Өзгерістер мұрағатта сақталмайды — бұл тек формулировканы жедел түзетуге арналған режим.",
           },
           profile: {
             title: "Түйін параметрлері", save_btn: "Сақтау", syncing: "Синхрондау",
@@ -312,24 +372,54 @@ i18n
   create_id: "Create Node ID",
   error_invalid: "ACCESS_DENIED: INVALID CREDENTIALS"
 },
-          nav: { check: "Verification", history: "History", account: "Account", roadmap: "Roadmap" },
+          nav: { check: "Verification", history: "History", account: "Account", roadmap: "Roadmap", team: "Team" },
           settings: { language: "System Language", theme: "Visual Theme" },
           dash: { 
             title_new: "Document Sync", 
             subtitle_new: "Intelligent text similarity analysis",
             title_history: "Audit Archive",
             subtitle_history: "History of your previous scans",
-            btn_reset: "Reset Core"
+            btn_reset: "Reset Core",
+            clear_history: "Clear history",
+            clearing: "Clearing...",
+            clear_confirm: "Delete your entire scan history? This action cannot be undone.",
+            history_label: "Sessions in archive",
+            insights_title: "Scan summary",
+            insights_last_run: "Last scan",
+            insights_total_docs: "Documents checked",
+            insights_empty: "No scans have been run yet",
+            insights_tip_title: "How to read scores",
+            insights_tip_1: "80–100% — safe zone, text looks original.",
+            insights_tip_2: "50–80% — pay attention, review highlighted overlaps.",
+            insights_tip_3: "Below 50% — high‑risk zone, manual review required."
           },
           upload: {
             title: "Drop layers here",
-            formats: "PDF, DOCX, TXT supported",
+            formats: "Supports PDF, DOCX, TXT, ZIP and RAR",
             selected: "Active",
             btn_start: "Execute Analysis"
+          },
+          team: {
+            title: "Core Team",
+            subtitle: "People behind the QazZerep verification engine.",
+            roles: {
+              core_architect: "Fullstack & backend",
+              product: "Idea, decks & documentation"
+            },
+            descriptions: {
+              ramir: "Ramir builds the backend and the entire QazZerep interface — from the dashboard to public pages.",
+              ramadan: "Ramadan is the originator of the QazZerep idea, curating vision, presentations and project documentation."
+            },
+            note: "These are placeholder avatars — later you can replace them with real photos and links."
           },
           report: {
             title: "Analysis Report", match_label: "Similarity", source_a: "Source A",
             target_b: "Source B", ai_prob: "AI Probability", copied: "Copied",
+            recalc_title: "Recalculate uniqueness",
+            recalc_subtitle: "Tweak the text fragments and recompute the score without re-uploading files.",
+            recalc_btn: "Recalculate",
+            recalc_btn_loading: "Recalculating...",
+            recalc_hint: "Changes are not stored in history — this is a quick what-if mode for tuning wording.",
           },
           profile: {
             title: "Node Settings", save_btn: "Save Config", syncing: "Syncing",

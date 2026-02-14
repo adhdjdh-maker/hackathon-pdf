@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import axios from "../utils/axios";
 import { useTheme } from "../hooks/useTheme";
+import ramadanAvatar from "../images/image.png";
 import { 
     FiUploadCloud, FiFileText, FiX, FiChevronRight, FiActivity, FiClock, 
-    FiGrid, FiUser, FiZap, FiCalendar, FiCopy, FiCheck, FiSun, FiMoon, FiMonitor, FiNavigation 
+    FiGrid, FiUser, FiZap, FiCalendar, FiCopy, FiCheck, FiSun, FiMoon, FiMonitor, FiNavigation, FiTrash2, FiRefreshCw, FiUsers
 } from "react-icons/fi";
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -66,6 +68,10 @@ export default function Dashboard() {
     const [copied, setCopied] = useState(false);
     const [selectedPair, setSelectedPair] = useState(null);
     const [isAppLoading, setIsAppLoading] = useState(true);
+    const [isClearingHistory, setIsClearingHistory] = useState(false);
+    const [editTextA, setEditTextA] = useState("");
+    const [editTextB, setEditTextB] = useState("");
+    const [isRecalculating, setIsRecalculating] = useState(false);
 
     useEffect(() => {
         const timer = setTimeout(() => setIsAppLoading(false), 2500);
@@ -76,11 +82,45 @@ export default function Dashboard() {
         if (viewMode === "history") fetchHistory(); 
     }, [viewMode]);
 
+    useEffect(() => {
+        if (!selectedPair) {
+            setEditTextA("");
+            setEditTextB("");
+            return;
+        }
+
+        const stripHtml = (html) => {
+            if (!html) return "";
+            const tmp = document.createElement("div");
+            tmp.innerHTML = html;
+            return tmp.textContent || tmp.innerText || "";
+        };
+
+        setEditTextA(stripHtml(selectedPair.docA?.html));
+        setEditTextB(stripHtml(selectedPair.docB?.html));
+    }, [selectedPair]);
+
     const fetchHistory = async () => {
         try { 
             const res = await axios.get('/documents/history'); 
             setHistory(res.data); 
         } catch (e) { console.error("Archive error"); }
+    };
+
+    const handleClearHistory = async () => {
+        if (!history.length) return;
+        const confirmed = window.confirm(t('dash.clear_confirm'));
+        if (!confirmed) return;
+
+        try {
+            setIsClearingHistory(true);
+            await axios.delete('/documents/history');
+            setHistory([]);
+        } catch (e) {
+            console.error("Clear history error", e);
+        } finally {
+            setIsClearingHistory(false);
+        }
     };
 
     const handleCompare = async () => {
@@ -97,6 +137,33 @@ export default function Dashboard() {
             setResult(res.data);
         } catch (e) { console.error("Server error"); }
         finally { setLoading(false); }
+    };
+
+    const handleRecalculate = async () => {
+        if (!editTextA.trim() || !editTextB.trim() || !selectedPair) return;
+        try {
+            setIsRecalculating(true);
+            const res = await axios.post('/documents/recalculate', {
+                text_a: editTextA,
+                text_b: editTextB,
+                name_a: selectedPair.docA?.name,
+                name_b: selectedPair.docB?.name,
+            });
+
+            const updated = {
+                ...selectedPair,
+                similarity: res.data.similarity,
+                originality: res.data.originality,
+                semantic_info: res.data.semantic_info,
+                docA: res.data.docA,
+                docB: res.data.docB,
+            };
+            setSelectedPair(updated);
+        } catch (e) {
+            console.error('Recalc error', e);
+        } finally {
+            setIsRecalculating(false);
+        }
     };
 
     const copyLink = () => {
@@ -127,6 +194,7 @@ export default function Dashboard() {
                     <NavItem active={viewMode === 'history'} icon={<FiClock size={18}/>} label={t('nav.history')} onClick={() => setViewMode('history')} />
                     <div className="hidden md:block my-4 border-t border-border/50 mx-4"></div>
                     <NavItem active={viewMode === 'roadmap'} icon={<FiNavigation size={18}/>} label={t('nav.roadmap') || "Roadmap"} onClick={() => setViewMode('roadmap')} />
+                    <NavItem active={viewMode === 'team'} icon={<FiUsers size={18}/>} label={t('nav.team')} onClick={() => setViewMode('team')} />
                     <NavItem active={isProfileOpen} icon={<FiUser size={18}/>} label={t('nav.account')} onClick={() => setIsProfileOpen(true)} />
                     
                     {/* Языки и Тема */}
@@ -151,9 +219,9 @@ export default function Dashboard() {
             <main className="flex-1 flex flex-col relative overflow-y-auto custom-scrollbar">
                 <div className="p-6 md:p-16 max-w-6xl mx-auto w-full flex-1">
                     
-                    {/* Условный рендеринг заголовков (не показываем для Roadmap) */}
-                    {viewMode !== "roadmap" && (
-                        <header className="mb-12 animate-in fade-in duration-500">
+                    {/* Условный рендеринг заголовков (только для new/history) */}
+                    {(viewMode === "new" || viewMode === "history") && (
+                        <header className="mb-8 animate-in fade-in duration-500">
                             <h1 className="text-3xl font-medium tracking-tight italic">
                                 {viewMode === "new" ? t('dash.title_new') : t('dash.title_history')}
                             </h1>
@@ -166,29 +234,85 @@ export default function Dashboard() {
                     {/* РЕНДЕРИНГ КОНТЕНТА ПО РЕЖИМАМ */}
                     
                     {viewMode === "new" && (
-                        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
                             {!result && !loading && (
-                                <div className="relative group">
-                                    <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl blur opacity-10 group-hover:opacity-20 transition duration-1000"></div>
-                                    <div className="relative bg-card border border-border rounded-3xl p-12 md:p-24 flex flex-col items-center border-dashed group-hover:border-foreground/20 transition-all">
-                                        <input type="file" multiple onChange={(e) => setFiles(Array.from(e.target.files))} className="hidden" id="file-up" />
-                                        <label htmlFor="file-up" className="cursor-pointer flex flex-col items-center text-center">
-                                            <div className="w-16 h-16 bg-foreground/5 rounded-2xl flex items-center justify-center mb-6">
-                                                <FiUploadCloud size={28} className="text-foreground" />
+                                <>
+                                    <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,2.2fr)_minmax(0,1.5fr)] gap-6 items-stretch">
+                                        <div className="bg-card border border-border rounded-[28px] p-5 md:p-7 shadow-xl flex flex-col gap-5 h-full">
+                                            <div className="flex flex-wrap items-center justify-between gap-3">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-2xl bg-foreground/5 flex items-center justify-center">
+                                                        <FiUploadCloud size={20} className="text-foreground" />
+                                                    </div>
+                                                    <div>
+                                                        <h2 className="text-[16px] md:text-[18px] font-medium tracking-tight">
+                                                            {t('upload.title')}
+                                                        </h2>
+                                                        <p className="text-[11px] text-muted-foreground mt-1">
+                                                            {t('upload.formats')}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex flex-wrap gap-2 text-[9px] text-muted-foreground/90">
+                                                    <span className="px-3 py-1 rounded-full bg-background border border-border/60 uppercase tracking-[0.25em]">
+                                                        Step 1 · Upload
+                                                    </span>
+                                                    <span className="px-3 py-1 rounded-full bg-background border border-border/60 uppercase tracking-[0.25em]">
+                                                        Step 2 · Analyze
+                                                    </span>
+                                                    <span className="px-3 py-1 rounded-full bg-background border border-border/60 uppercase tracking-[0.25em]">
+                                                        Step 3 · Report
+                                                    </span>
+                                                </div>
                                             </div>
-                                            <h2 className="text-lg font-medium">{t('upload.title')}</h2>
-                                            <p className="text-muted-foreground text-sm mt-2 opacity-50">{t('upload.formats')}</p>
-                                        </label>
-                                        {files.length > 0 && (
-                                            <div className="mt-8 flex flex-col items-center">
-                                                <span className="text-[10px] text-blue-500 mb-4 font-black uppercase tracking-widest">{t('upload.selected')}: {files.length}</span>
-                                                <button onClick={handleCompare} className="px-12 py-4 bg-foreground text-background font-black text-[11px] uppercase tracking-widest rounded-full hover:opacity-90 transition-all active:scale-95 shadow-xl">
-                                                    {t('upload.btn_start')}
-                                                </button>
+
+                                            <div className="mt-1.5 flex-1 flex">
+                                                <input
+                                                    type="file"
+                                                    multiple
+                                                    onChange={(e) => setFiles(Array.from(e.target.files))}
+                                                    className="hidden"
+                                                    id="file-up"
+                                                />
+                                                <label
+                                                    htmlFor="file-up"
+                                                    className="block border-2 border-dashed border-border/80 rounded-[26px] px-6 py-6 md:px-8 md:py-8 text-center cursor-pointer hover:border-foreground/40 hover:bg-foreground/[0.01] transition-colors min-h-[180px] md:min-h-[210px] flex-1 flex items-center justify-center"
+                                                >
+                                                    <div className="flex flex-col items-center gap-2 max-w-md mx-auto">
+                                                        <div className="w-14 h-14 bg-foreground/5 rounded-2xl flex items-center justify-center">
+                                                            <FiUploadCloud size={26} className="text-foreground" />
+                                                        </div>
+                                                        <p className="text-[13px] font-medium tracking-tight mb-0.5">
+                                                            {t('dash.title_new')}
+                                                        </p>
+                                                        <p className="text-[11px] text-muted-foreground">
+                                                            {t('dash.subtitle_new')}
+                                                        </p>
+                                                    </div>
+                                                </label>
                                             </div>
-                                        )}
+
+                                            {files.length > 0 && (
+                                                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pt-2 border-t border-border/40 mt-4">
+                                                    <span className="text-[10px] text-muted-foreground uppercase tracking-[0.25em]">
+                                                        {t('upload.selected')}: {files.length}
+                                                    </span>
+                                                    <button
+                                                        onClick={handleCompare}
+                                                        className="px-10 py-3 bg-foreground text-background font-black text-[10px] uppercase tracking-[0.3em] rounded-full hover:opacity-90 active:scale-95 transition-all shadow-lg"
+                                                    >
+                                                        {t('upload.btn_start')}
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            <InsightsPanel t={t} history={history} />
+                                            <ProjectInfoPanel t={t} />
+                                        </div>
                                     </div>
-                                </div>
+                                </>
                             )}
                             {result && !loading && (
                                 <div className="grid grid-cols-1 gap-4">
@@ -202,18 +326,40 @@ export default function Dashboard() {
                     )}
 
                     {viewMode === "history" && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-500">
-                            {history.length > 0 ? history.map((session, i) => (
-                                <HistoryCard key={i} session={session} onSelect={setSelectedPair} />
-                            )) : (
-                                <div className="col-span-full py-20 text-center opacity-30 italic">No records found</div>
-                            )}
+                        <div className="space-y-4 animate-in fade-in duration-500">
+                            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                                <span className="text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground flex items-center gap-2">
+                                    <FiClock size={14} className="opacity-70" />
+                                    {t('dash.history_label')} · {history.length}
+                                </span>
+                                <button
+                                    onClick={handleClearHistory}
+                                    disabled={!history.length || isClearingHistory}
+                                    className="inline-flex items-center gap-2 self-start md:self-auto px-4 py-2 rounded-full border border-border text-[9px] font-black uppercase tracking-[0.25em] text-muted-foreground hover:text-red-500 hover:border-red-500/60 hover:bg-red-500/5 transition-all disabled:opacity-40 disabled:hover:text-muted-foreground disabled:hover:border-border"
+                                >
+                                    <FiTrash2 size={12} />
+                                    {isClearingHistory ? t('dash.clearing') : t('dash.clear_history')}
+                                </button>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {history.length > 0 ? history.map((session, i) => (
+                                    <HistoryCard key={i} session={session} onSelect={setSelectedPair} />
+                                )) : (
+                                    <div className="col-span-full py-20 text-center opacity-30 italic">No records found</div>
+                                )}
+                            </div>
                         </div>
                     )}
 
                     {viewMode === "roadmap" && (
                         <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
                             <ProjectRoadmap />
+                        </div>
+                    )}
+
+                    {viewMode === "team" && (
+                        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+                            <TeamSection />
                         </div>
                     )}
                 </div>
@@ -261,6 +407,63 @@ export default function Dashboard() {
                                 <TextPanel doc={selectedPair.docA} />
                                 <TextPanel doc={selectedPair.docB} />
                             </div>
+
+                            <div className="mt-8 grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(0,1.4fr)] gap-8 items-start">
+                                <div className="bg-card border border-border rounded-[32px] p-6 md:p-8 space-y-4">
+                                    <div className="flex items-center justify-between gap-3 mb-2">
+                                        <div>
+                                            <span className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground italic block mb-1">
+                                                {t('report.recalc_title')}
+                                            </span>
+                                            <p className="text-[11px] text-muted-foreground max-w-xl">
+                                                {t('report.recalc_subtitle')}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-[12px]">
+                                        <div className="flex flex-col gap-2">
+                                            <span className="text-[9px] font-black uppercase tracking-[0.25em] text-muted-foreground">{selectedPair.docA?.name}</span>
+                                            <textarea
+                                                className="w-full h-40 bg-background border border-border rounded-2xl p-3 font-mono text-[11px] custom-scrollbar outline-none focus:border-foreground/20"
+                                                value={editTextA}
+                                                onChange={(e) => setEditTextA(e.target.value)}
+                                                spellCheck="false"
+                                            />
+                                        </div>
+                                        <div className="flex flex-col gap-2">
+                                            <span className="text-[9px] font-black uppercase tracking-[0.25em] text-muted-foreground">{selectedPair.docB?.name}</span>
+                                            <textarea
+                                                className="w-full h-40 bg-background border border-border rounded-2xl p-3 font-mono text-[11px] custom-scrollbar outline-none focus:border-foreground/20"
+                                                value={editTextB}
+                                                onChange={(e) => setEditTextB(e.target.value)}
+                                                spellCheck="false"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mt-4">
+                                        <p className="text-[10px] text-muted-foreground max-w-xl">
+                                            {t('report.recalc_hint')}
+                                        </p>
+                                        <button
+                                            onClick={handleRecalculate}
+                                            disabled={isRecalculating || !editTextA.trim() || !editTextB.trim()}
+                                            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-foreground text-background text-[10px] font-black uppercase tracking-[0.25em] shadow-lg hover:opacity-90 active:scale-95 transition-all disabled:opacity-40"
+                                        >
+                                            {isRecalculating ? (
+                                                <>
+                                                    <FiActivity size={12} className="animate-spin" />
+                                                    {t('report.recalc_btn_loading')}
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <FiRefreshCw size={12} />
+                                                    {t('report.recalc_btn')}
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -271,6 +474,8 @@ export default function Dashboard() {
                 .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
                 .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); }
                 .diff-match { color: #ef4444; background: rgba(239, 68, 68, 0.08); }
+                .team-gradient { position:absolute; inset:-40%; background:radial-gradient(circle at 0% 0%, rgba(59,130,246,0.4), transparent 55%), radial-gradient(circle at 100% 100%, rgba(129,140,248,0.4), transparent 55%); opacity:0.65; filter:blur(10px); animation:teamBeam 26s linear infinite alternate; }
+                @keyframes teamBeam { 0% { transform:translate3d(-10%,0,0); } 50% { transform:translate3d(10%,4%,0); } 100% { transform:translate3d(-6%,-3%,0); } }
                 ::selection { background: #3b82f6; color: #fff; }
             `}</style>
         </div>
@@ -344,6 +549,158 @@ function TextPanel({ doc }) {
                 <FiActivity size={14} className="text-blue-500 animate-pulse" />
             </div>
             <div className="p-10 text-[15px] text-foreground/80 leading-[1.8] max-h-[600px] overflow-y-auto custom-scrollbar font-light tracking-tight" dangerouslySetInnerHTML={{ __html: doc.html }} />
+        </div>
+    );
+}
+
+function InsightsPanel({ t, history }) {
+    const hasHistory = Array.isArray(history) && history.length > 0;
+    let lastDate = null;
+    let totalPairs = 0;
+
+    if (hasHistory) {
+        const sorted = [...history].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        const last = sorted[0];
+        lastDate = new Date(last.timestamp).toLocaleString();
+        totalPairs = history.reduce((acc, session) => acc + (session.total_pairs || 0), 0);
+    }
+
+    return (
+        <div className="bg-card border border-border rounded-[28px] p-6 md:p-7 flex flex-col justify-between shadow-xl">
+            <div className="space-y-6">
+                <div>
+                    <span className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground italic mb-2 block">
+                        {t('dash.insights_title')}
+                    </span>
+                    <h3 className="text-lg font-medium tracking-tight text-foreground">
+                        {hasHistory ? t('dash.insights_last_run') : t('dash.insights_empty')}
+                    </h3>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 text-[11px]">
+                    <div className="rounded-2xl bg-foreground/5 border border-border px-4 py-3 flex flex-col gap-1">
+                        <span className="text-[9px] uppercase tracking-[0.25em] text-muted-foreground flex items-center gap-2">
+                            <FiClock size={11} />
+                            {t('dash.insights_last_run')}
+                        </span>
+                        <span className="text-[12px] font-medium mt-1">
+                            {hasHistory ? lastDate : '—'}
+                        </span>
+                    </div>
+                    <div className="rounded-2xl bg-foreground/5 border border-border px-4 py-3 flex flex-col gap-1">
+                        <span className="text-[9px] uppercase tracking-[0.25em] text-muted-foreground flex items-center gap-2">
+                            <FiActivity size={11} />
+                            {t('dash.insights_total_docs')}
+                        </span>
+                        <span className="text-[20px] font-black tracking-tight">
+                            {hasHistory ? totalPairs : 0}
+                        </span>
+                    </div>
+                </div>
+
+                <div className="mt-2 p-4 rounded-2xl border border-border bg-foreground/[0.02]">
+                    <span className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground mb-2 block">
+                        {t('dash.insights_tip_title')}
+                    </span>
+                    <ul className="space-y-1.5 text-[11px] text-muted-foreground leading-relaxed">
+                        <li>• {t('dash.insights_tip_1')}</li>
+                        <li>• {t('dash.insights_tip_2')}</li>
+                        <li>• {t('dash.insights_tip_3')}</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+const TEAM_MEMBERS = [
+    { id: 'ramir', name: 'Ramir', roleKey: 'core_architect' },
+    { id: 'ramadan', name: 'Ramadan', roleKey: 'product', telegram: '@brjxjxjd', avatar: ramadanAvatar },
+];
+
+function TeamSection() {
+    const { t } = useTranslation();
+
+    return (
+        <div className="max-w-6xl mx-auto">
+            <section className="text-center mb-8">
+                <h1 className="text-3xl md:text-4xl font-black italic tracking-tighter uppercase mb-2">
+                    {t('team.title')}
+                </h1>
+                <p className="text-[12px] md:text-sm text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+                    {t('team.subtitle')}
+                </p>
+            </section>
+
+            <div className="relative overflow-hidden rounded-[32px] border border-border bg-card/80 backdrop-blur-xl shadow-[0_22px_80px_rgba(15,23,42,0.45)]">
+                <div className="team-gradient pointer-events-none" />
+                <div className="divide-y divide-border/50">
+                    {TEAM_MEMBERS.map((m, idx) => (
+                        <div
+                            key={idx}
+                            className="relative flex flex-col sm:flex-row items-center sm:items-stretch gap-5 px-6 md:px-10 py-6 md:py-7 group"
+                        >
+                            <div className="flex items-center gap-4 sm:w-1/3">
+                                <div className="relative">
+                                    <div className="w-16 h-16 md:w-20 md:h-20 rounded-[24px] bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-xl md:text-2xl font-black tracking-tighter text-white shadow-[0_0_40px_rgba(59,130,246,0.45)] group-hover:scale-[1.03] group-hover:shadow-[0_0_55px_rgba(59,130,246,0.7)] overflow-hidden transition-transform duration-400">
+                                        {m.avatar ? (
+                                            <img src={m.avatar} alt={m.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            m.name.split(' ').map((p) => p[0]).join('')
+                                        )}
+                                    </div>
+                                    <div className="absolute inset-0 rounded-[32px] border border-blue-400/20 group-hover:border-blue-400/50 transition-colors duration-500" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-semibold text-foreground">{m.name}</p>
+                                    <p className="text-[10px] text-muted-foreground uppercase tracking-[0.25em] mt-1">
+                                        {t(`team.roles.${m.roleKey}`)}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex-1 flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-2 sm:mt-0">
+                                <p className="text-[11px] text-muted-foreground leading-relaxed max-w-xl">
+                                    {t(`team.descriptions.${m.id}`)}
+                                </p>
+                                <div className="flex justify-end sm:items-center sm:justify-center min-w-[120px] text-muted-foreground">
+                                    {m.telegram && (
+                                        <a
+                                            href={`https://t.me/${m.telegram.replace('@', '')}`}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="px-4 py-1.5 rounded-full bg-foreground/5 hover:bg-foreground/10 hover:text-foreground transition-colors text-[11px] font-mono flex items-center gap-2"
+                                        >
+                                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                            {m.telegram}
+                                        </a>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function ProjectInfoPanel({ t }) {
+    return (
+        <div className="bg-card border border-border rounded-[32px] p-6 md:p-7 shadow-xl">
+            <span className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground italic mb-3 block">
+                QazZerep · 2026 Core
+            </span>
+            <h3 className="text-[15px] font-medium tracking-tight text-foreground mb-3">
+                QazZerep — система сверки оригинальности документов
+            </h3>
+            <p className="text-[11px] text-muted-foreground leading-relaxed mb-4">
+                Платформа собирает локальные архивы, открытые источники и внутренние базы, чтобы находить пересечения между студенческими и научными работами.
+            </p>
+            <ul className="space-y-1.5 text-[11px] text-muted-foreground/90">
+                <li>• Асинхронный FastAPI-бэкенд, оптимизированный под батч-сравнения.</li>
+                <li>• Поддержка PDF, DOCX, TXT, ZIP и RAR в одном окне загрузки.</li>
+                <li>• Публичные проверки по ссылке (Verify) + PDF-отчёты для преподавателей.</li>
+            </ul>
         </div>
     );
 }

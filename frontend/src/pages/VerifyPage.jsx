@@ -34,6 +34,22 @@ export default function VerifyPage() {
         setTimeout(() => setCopied(false), 2000);
     };
 
+    const handleDownloadPdf = async () => {
+        try {
+            const res = await axios.get(`/reports/${reportId}/pdf`, { responseType: 'blob' });
+            const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `qazzerep-report-${reportId}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (e) {
+            console.error('PDF export error', e);
+        }
+    };
+
     if (loading) return (
         <div className="h-screen bg-[#050505] flex flex-col items-center justify-center font-sans overflow-hidden">
             <div className="relative">
@@ -93,6 +109,14 @@ export default function VerifyPage() {
                         >
                             {copied ? <FiCheck size={14}/> : <FiCopy size={14}/>} 
                             <span className="hidden sm:inline">{copied ? "Copied" : "Copy Proof Link"}</span>
+                        </button>
+
+                        <button
+                            onClick={handleDownloadPdf}
+                            className="hidden sm:flex items-center gap-3 px-6 py-2.5 rounded-full bg-white text-black text-[9px] font-black uppercase tracking-widest hover:bg-blue-500 hover:text-white transition-all duration-300"
+                        >
+                            <FiDownload size={14} />
+                            Download PDF Report
                         </button>
                     </div>
                 </div>
